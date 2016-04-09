@@ -38,3 +38,16 @@ CREATE TABLE user_groups ( -- DEFAULT
 CREATE TABLE preregister (
        email citext NOT NULL
 );
+
+CREATE TABLE events (
+       eventid bigserial primary key,
+       name text,
+       description text,
+       startdate datetime,
+       enddate datetime
+)
+
+CREATE TABLE events_users (
+       userid bigint NOT NULL references users(userid),
+       events bigint NOT NULL references events(eventid)
+)
