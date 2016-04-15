@@ -5,12 +5,12 @@ const passport = require('passport');
 const express = require('express');
 const app = express();
 
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(morgan('dev'));
 
 app.use(passport.initialize());
-require('./utils/auth')(passport);
+require('utils/auth')(passport);
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -19,7 +19,7 @@ app.use((req, res, next) => {
   next();
 });
 
-require('./app/routes')(app, express);
+require('./apis')(app, express);
 app.get('*', (req, res) => {
   res.redirect('/app');
 });
