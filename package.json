@@ -4,7 +4,7 @@
   "description": "A platform that provides users to request and offer their services.",
   "main": "server/index.js",
   "scripts": {
-    "start": "nodemon server.js -L --watch server/index.js --watch app --watch config --exec babel-node --presets es2015",
+    "start": "nodemon server/index.js -L --watch server/index.js --watch server --watch config --exec babel-node --presets es2015",
     "compile": "babel --presets es2015 -d server/dist/ server/"
   },
   "repository": {
@@ -24,11 +24,13 @@
     "lodash": "^4.11.1",
     "moment": "^2.12.0",
     "morgan": "^1.7.0",
+    "node-uuid": "^1.4.7",
     "passport": "^0.3.2",
     "passport-jwt": "^2.0.0",
-    "rethinkdb": "^2.3.0",
-    "socket.io": "^1.4.5",
-    "thinky": "^2.2.7"
+    "pg": "^4.5.3",
+    "pg-hstore": "^2.3.2",
+    "sequelize": "^3.21.0",
+    "socket.io": "^1.4.5"
   },
   "devDependencies": {
     "babel-core": "^6.7.6",

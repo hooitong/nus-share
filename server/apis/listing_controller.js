@@ -2,38 +2,61 @@
 const _ = require('lodash');
 const moment = require('moment');
 
-const User = require('../models/user');
-const Listing = require('../models/listing');
+const Listing = require('../models').listing;
 
 function getListings(req, res) {
-  Listing.filter((listing) => {
-    return moment(listing('endDate')).isSameOrBefore(moment());
-  }).getJoin({
-    participants: {
-      _apply: (user) => {
-        return user.pluck('id', 'name', 'email', 'contact');
-      }
-    }
-  }).run().then((listings) => {
-    res.json(listings);
-  });
+  return Listing.getValidListings(moment().format())
+    .then(listings => {
+      res.json({ success: true, listings });
+    });
 }
 
 function addListing(req, res) {
-
+  const listingInfo = req.body.listing;
+  const creator = req.body.userId;
+  return Listing.createListing(listingInfo, creator)
+    .then(listing => {
+      res.json({ success: true, listing });
+    });
 }
 
 function updateListing(req, res) {
-
+  const listingId = req.body.listingId;
+  const listingInfo = req.body.listing;
+  return Listing.updateListing(listingId, listingInfo)
+    .then(listing => {
+      res.json({ success: true, listing });
+    });
 }
 
-function removeListing(req, res) {
+function registerUser(req, res) {
+  const userId = req.body.userId;
+  const listingId = req.body.listingId;
 
+  return Listing.registerUser(userId, listingId)
+    .then(listing => {
+      res.json({ success: true, listing });
+    });
+}
+
+function closeListing(req, res) {
+  const listingId = req.body.listingId;
+  return Listing.closeListing(listingId)
+    .then(listing => {
+      res.json({ success: true, listing });
+    });
 }
 
 function getListing(req, res) {
-
+  const listingId = req.body.listingId;
+  return Listing.getListingById(listingId)
+    .then(listing => {
+      res.json({ success: true, listing });
+    });
 }
 
-const userCtrl = { getListings, addListing, updateListing, removeListing, getListing };
+const userCtrl = {
+  getListings, addListing, updateListing,
+  registerUser, closeListing, getListing
+};
 export default userCtrl;

@@ -1,6 +1,6 @@
-const passport = require('passport');
-const listingCtrl = require('./listing_controller');
-const userCtrl = require('./user_controller');
+import passport from 'passport';
+import listingCtrl from './listing_controller';
+import userCtrl from './user_controller';
 
 module.exports = function (app, express) {
   const usersRouter = express.Router();
@@ -10,12 +10,14 @@ module.exports = function (app, express) {
   usersRouter.post('/', userCtrl.addUser);
   usersRouter.get('/:userId', userCtrl.getUser);
   usersRouter.put('/:userId', userCtrl.updateUser);
+  usersRouter.post('/authenticate', userCtrl.authenticate);
 
   /* Listings-Related Endpoints */
   listingsRouter.get('/', listingCtrl.getListings);
   listingsRouter.post('/', listingCtrl.addListing);
   listingsRouter.put('/:listingId', listingCtrl.updateListing);
-  listingsRouter.delete('/:listingId', listingCtrl.removeListing);
+  listingsRouter.put('/:listingId/:userId', listingCtrl.registerUser);
+  listingsRouter.delete('/:listingId', listingCtrl.closeListing);
   listingsRouter.get('/:listingId', listingCtrl.getListing);
 
   // Configure app to load all the routers

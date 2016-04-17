@@ -10,7 +10,7 @@ app.use(bodyParser.json());
 app.use(morgan('dev'));
 
 app.use(passport.initialize());
-require('utils/auth')(passport);
+require('./utils/auth')(passport);
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -24,5 +24,5 @@ app.get('*', (req, res) => {
   res.redirect('/app');
 });
 
-app.listen(config.get('port'));
+app.listen(config.express.port);
 console.log(`Server Port opened at ${config.express.port}`);
