@@ -13,7 +13,7 @@ function addUser(req, res) {
   const userInfo = { name, email, contact, password };
   return User.createUser(userInfo)
     .then(user => {
-      res.json({ success: true, userId: user.id });
+      res.json(user);
     });
 }
 

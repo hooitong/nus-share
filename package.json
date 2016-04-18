@@ -2,9 +2,9 @@
   "name": "NUSShare",
   "version": "0.0.1",
   "description": "A platform that provides users to request and offer their services.",
-  "main": "server/index.js",
+  "main": "index.js",
   "scripts": {
-    "start": "nodemon server/index.js -L --watch server/index.js --watch server --watch config --exec babel-node --presets es2015",
+    "start": "nodemon index.js -L --watch index.js --watch server --watch config --exec babel-node --presets es2015",
     "compile": "babel --presets es2015 -d server/dist/ server/"
   },
   "repository": {

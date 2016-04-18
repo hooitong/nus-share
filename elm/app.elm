@@ -1,116 +1,165 @@
 module ShareApp where
 
+import ListingList
+import ListingEntity
+import UserHome
+import Routes exposing (..)
+import ServerEndpoints
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (..)
-import StartApp
-import Http
-import Json.Decode as JsonD exposing (..)
-import Json.Decode.Extra exposing (apply)
-import Json.Encode as JsonE
+import Task exposing (..)
 import Effects exposing (Effects, Never)
-import Task
-import Signal exposing (Signal, Address)
-import String
-import Window
-import Date
-import Debug exposing (log)
+import Signal exposing (message)
+import StartApp
+import TransitRouter exposing (WithRoute, getTransition)
+import TransitStyle
 
-type alias User = {
-  id: String,
-  name: String,
-  email: String,
-  contact: String
-}
+import Debug exposing (..)
 
-type alias Listing = {
-  id: String,
-  title: String,
-  lType: String,
-  content: String,
-  venue: String,
-  startDate: String,
-  endDate: String,
-  limit: Int,
-  closed: Bool
-}
+type alias Model = WithRoute Routes.Route
+  { userHomeModel : UserHome.Model
+  , listingListModel : ListingList.Model
+  , listingEntityModel : ListingEntity.Model
+  }
 
-type alias Model = {
-  listings: List Listing
-}
+type Action =
+    NoOp
+  | HomeAction UserHome.Action
+  | ListingListAction ListingList.Action
+  | ListingEntityAction ListingEntity.Action
+  | RouterAction (TransitRouter.Action Routes.Route)
 
-type Action = ListingRetrieved (Maybe (List Listing))
+initialModel : Model
+initialModel =
+  { transitRouter = TransitRouter.empty Routes.EmptyRoute
+  , userHomeModel = UserHome.init
+  , listingListModel = ListingList.init
+  , listingEntityModel = ListingEntity.init
+  }
 
-init : (Model, Effects Action)
-init =
-  ( Model []
-    , getListings
-  )
 
-update: Action -> Model -> (Model, Effects Action)
+actions : Signal Action
+actions =
+  Signal.map RouterAction TransitRouter.actions
+
+
+mountRoute : Route -> Route -> Model -> (Model, Effects Action)
+mountRoute prevRoute route model =
+  case route of
+    UserHomePage ->
+      (model, Effects.none)
+
+    ListingListPage ->
+      (model, Effects.map ListingListAction (ServerEndpoints.getListings ListingList.HandleListingsRetrieved))
+
+    ListingEntityPage listingId ->
+      (model, Effects.map ListingEntityAction (ServerEndpoints.getListing listingId ListingEntity.ShowListing))
+
+    NewListingPage ->
+      ({ model | listingEntityModel = ListingEntity.init } , Effects.none)
+
+    EmptyRoute ->
+      (model, Effects.none)
+
+
+routerConfig : TransitRouter.Config Routes.Route Action Model
+routerConfig =
+  { mountRoute = mountRoute
+  , getDurations = \_ _ _ -> (50, 200)
+  , actionWrapper = RouterAction
+  , routeDecoder = Routes.decode
+  }
+
+
+init : String -> (Model, Effects Action)
+init path =
+  TransitRouter.init routerConfig path initialModel
+
+update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
-    ListingRetrieved xs -> ({model | listings = (Maybe.withDefault [] xs)}, Effects.none)
+    NoOp ->
+      (model, Effects.none)
 
-baseUrl: String
-baseUrl = "http://devserver.com:8080/api"
+    HomeAction homeAction ->
+      let (model', effects) = UserHome.update homeAction model.userHomeModel
+      in ( { model | userHomeModel = model' }
+         , Effects.map HomeAction effects )
 
-getListings : Effects.Effects Action
-getListings =
-  Http.get listingsDecoder (baseUrl ++ "/listings")
-    |> Task.toMaybe
-    |> Task.map ListingRetrieved
-    |> Effects.task
+    ListingListAction act ->
+      let (model', effects) = ListingList.update act model.listingListModel
+      in ( { model | listingListModel = model' }
+         , Effects.map ListingListAction effects )
 
-listingDecoder : JsonD.Decoder Listing
-listingDecoder = Listing
-  `map` ("id" := JsonD.string)
-  `apply` ("title" := JsonD.string)
-  `apply` ("type" := JsonD.string)
-  `apply` ("content" := JsonD.string)
-  `apply` ("venue" := JsonD.string)
-  `apply` ("startDate" := JsonD.string)
-  `apply` ("endDate" := JsonD.string)
-  `apply` ("limit" := JsonD.int)
-  `apply` ("closed" := JsonD.bool)
+    ListingEntityAction act ->
+      let (model', effects) = ListingEntity.update act model.listingEntityModel
+      in ( { model | listingEntityModel = model' }
+         , Effects.map ListingEntityAction effects )
 
-listingsDecoder : JsonD.Decoder (List Listing)
-listingsDecoder =
-  at ["listings"] (JsonD.list listingDecoder)
+    RouterAction routeAction ->
+      TransitRouter.update routerConfig routeAction model
 
-listingRow : Listing -> Html
-listingRow listing =
-  tr [] [
-    td [] [text (toString listing.id)],
-    td [] [text listing.title]
-  ]
 
-view: Signal.Address Action -> Model -> Html
-view address model =
-  div [class "container-fluid"] [
-        h1 [] [text "Listings" ],
-        table [class "table table-striped"] [
-          thead [] [
-            tr [] [
-              th [] [text "ID"],
-              th [] [text "Title"]
+-- Main view/layout functions
+menu : Signal.Address Action -> Model -> Html
+menu address model =
+  header [class "navbar navbar-default"] [
+    div [class "container"] [
+        div [class "navbar-header"] [
+          div [ class "navbar-brand" ] [
+            a (linkAttrs UserHomePage) [ text "Login/Register" ]
           ]
-        ],
-        tbody [] (List.map listingRow (log "listings" model.listings))
+        ]
+      , ul [class "nav navbar-nav"] [
+          li [] [a (linkAttrs ListingListPage) [ text "Artists" ]]
+      ]
     ]
   ]
 
--- start up application through extension
+contentView : Signal.Address Action -> Model -> Html
+contentView address model =
+  case (TransitRouter.getRoute model) of
+    UserHomePage ->
+      UserHome.view (Signal.forwardTo address HomeAction) model.userHomeModel
+
+    ListingListPage ->
+      ListingList.view (Signal.forwardTo address ListingListAction) model.listingListModel
+
+    ListingEntityPage i ->
+      ListingEntity.view (Signal.forwardTo address ListingEntityAction) model.listingEntityModel
+
+    NewListingPage  ->
+      ListingEntity.view (Signal.forwardTo address ListingEntityAction) model.listingEntityModel
+
+    EmptyRoute ->
+      text "Empty Route"
+
+view : Signal.Address Action -> Model -> Html
+view address model =
+  div [class "container-fluid"] [
+      menu address model
+    , div [ class "content"
+          , style (TransitStyle.fadeSlideLeft 100 (getTransition model))]
+          [contentView address model]
+  ]
+
+-- wiring up start app
 app : StartApp.App Model
-app = StartApp.start {
-    init = init,
-    update = update,
-    view = view,
-    inputs = []
-  }
+app =
+  StartApp.start
+    { init = init initialPath
+    , update = update
+    , view = view
+    , inputs = [actions]
+    }
 
 main : Signal Html
-main = app.html
+main =
+  app.html
 
 port tasks : Signal (Task.Task Never ())
-port tasks = app.tasks
+port tasks =
+  app.tasks
+
+port initialPath : String
