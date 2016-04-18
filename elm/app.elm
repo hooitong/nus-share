@@ -108,12 +108,15 @@ menu address model =
     div [class "container"] [
         div [class "navbar-header"] [
           div [ class "navbar-brand" ] [
-            a (linkAttrs UserHomePage) [ text "Login/Register" ]
+            a (linkAttrs ListingListPage) [ text "NUSShare" ]
           ]
+        ],
+        ul [class "nav navbar-nav"] [
+          li [] [a (linkAttrs ListingListPage) [ text "Listings" ]]
+        ],
+        ul [class "nav navbar-nav navbar-right"] [
+          li [] [a (linkAttrs UserHomePage) [text "Login/Register"]]
         ]
-      , ul [class "nav navbar-nav"] [
-          li [] [a (linkAttrs ListingListPage) [ text "Artists" ]]
-      ]
     ]
   ]
 

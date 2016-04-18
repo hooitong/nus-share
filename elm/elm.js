@@ -13102,10 +13102,13 @@ Elm.ShareApp.make = function (_elm) {
               _U.list([$Html$Attributes.$class("navbar-header")]),
               _U.list([A2($Html.div,
               _U.list([$Html$Attributes.$class("navbar-brand")]),
-              _U.list([A2($Html.a,$Routes.linkAttrs($Routes.UserHomePage),_U.list([$Html.text("Login/Register")]))]))]))
+              _U.list([A2($Html.a,$Routes.linkAttrs($Routes.ListingListPage),_U.list([$Html.text("NUSShare")]))]))]))
               ,A2($Html.ul,
               _U.list([$Html$Attributes.$class("nav navbar-nav")]),
-              _U.list([A2($Html.li,_U.list([]),_U.list([A2($Html.a,$Routes.linkAttrs($Routes.ListingListPage),_U.list([$Html.text("Artists")]))]))]))]))]));
+              _U.list([A2($Html.li,_U.list([]),_U.list([A2($Html.a,$Routes.linkAttrs($Routes.ListingListPage),_U.list([$Html.text("Listings")]))]))]))
+              ,A2($Html.ul,
+              _U.list([$Html$Attributes.$class("nav navbar-nav navbar-right")]),
+              _U.list([A2($Html.li,_U.list([]),_U.list([A2($Html.a,$Routes.linkAttrs($Routes.UserHomePage),_U.list([$Html.text("Login/Register")]))]))]))]))]));
    });
    var initialModel = {transitRouter: $TransitRouter.empty($Routes.EmptyRoute)
                       ,userHomeModel: $UserHome.init
