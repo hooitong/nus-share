@@ -13,6 +13,8 @@ type Route
   = UserAuthPage
   | ListingListPage
   | ListingEntityPage String
+  | MyListingsPage
+  | ParticipatedListingsPage
   | NewListingPage
   | EmptyRoute
 
@@ -20,6 +22,8 @@ routeParsers : List (Matcher Route)
 routeParsers =
   [ static UserAuthPage "/login",
     static ListingListPage "/",
+    static MyListingsPage "/me/created",
+    static ParticipatedListingsPage "/me/participated",
     static NewListingPage "/listings/new",
     dyn1 ListingEntityPage "/listings/" string ""
   ]
@@ -35,6 +39,8 @@ encode route =
   case route of
     UserAuthPage         -> "/login"
     ListingListPage      -> "/"
+    MyListingsPage        -> "/me/created"
+    ParticipatedListingsPage -> "/me/participated"
     NewListingPage       -> "/listings/new"
     ListingEntityPage id -> "/listings/" ++ id
     EmptyRoute           -> ""
@@ -57,8 +63,8 @@ linkAttrs route =
   let
     path = encode route
   in
-    [ href path
-    , onWithOptions
+    [ href path,
+      onWithOptions
         "click"
         { stopPropagation = True, preventDefault = True }
         Json.value

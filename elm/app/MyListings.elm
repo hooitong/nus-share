@@ -1,4 +1,4 @@
-module ListingList (Model, Action (..), init, view, update) where
+module MyListings (Model, Action (..), init, view, update) where
 
 import ServerEndpoints exposing (..)
 import Routes
@@ -18,30 +18,28 @@ type alias Model =
 type Action =
     Show
   | HandleListingsRetrieved (Maybe (List Listing))
-  | RegisterUser (String)
-  | HandleUserParticipation (Maybe Http.Response)
+  | CloseListing (String)
+  | HandleListingClosed (Maybe Http.Response)
 
 init : Model
 init = Model []
 
-update : Action -> Model -> Maybe(String) -> (Model, Effects Action)
+update : Action -> Model -> String -> (Model, Effects Action)
 update action model userId =
   case action of
     Show ->
-      (model, getListings HandleListingsRetrieved)
+      (model, getCreatorListings userId HandleListingsRetrieved)
 
     HandleListingsRetrieved xs ->
       ( {model | listings = (Maybe.withDefault [] xs) }
       , Effects.none
       )
 
-    RegisterUser id ->
-      case (log "test111" userId) of
-        Just userId' -> (model, registerUser id (log "test22" userId') HandleUserParticipation)
-        Nothing -> (model, getListings HandleListingsRetrieved)
+    CloseListing id ->
+      (model, closeListing id HandleListingClosed)
 
-    HandleUserParticipation res ->
-      (model, getListings HandleListingsRetrieved)
+    HandleListingClosed res ->
+      (model, getCreatorListings userId HandleListingsRetrieved)
 
 -- View Portion
 listingRow : Signal.Address Action -> Maybe(String) -> Listing -> Html
@@ -53,20 +51,13 @@ listingRow address userId listing =
     td [style [("vertical-align", "middle")]] [text (format "%d %b %Y %I:%M%p" (fromString listing.startDate |> Result.withDefault (Date.fromTime 0)))],
     td [style [("vertical-align", "middle")]] [text (format "%d %b %Y %I:%M%p" (fromString listing.endDate |> Result.withDefault (Date.fromTime 0)))],
     td [class "pull-right"] [div[class "btn-group"][button [class "btn btn-default", Routes.clickAttr <| Routes.ListingEntityPage listing.id ] [text "View"],
-           button [class ("btn btn-primary " ++ (checkHelped listing userId)), onClick address (RegisterUser listing.id)] [ text "Help" ]]]
+               button [class ("btn btn-danger " ++ (checkClosed listing)), onClick address (CloseListing listing.id)] [ text "Close" ]]]
   ]
 
 view : Signal.Address Action -> Model -> Maybe(String) -> Html
 view address model userId =
   div [class "container"] [
-      h2 [] [ text "Available Listings",
-                    button [class ("pull-right btn btn-default " ++ (case userId of
-                                                                    Just _ -> ""
-                                                                    Nothing -> "hidden"
-                                                                  )),
-                                                                  Routes.clickAttr Routes.NewListingPage]
-                           [text "New Listing"]
-            ],
+      h2 [] [ text "My Listings" ],
       table [class "table table-striped"] [
           thead [] [
             tr [] [
@@ -78,18 +69,11 @@ view address model userId =
               th [class "col-sm-2"] []
           ]
         ],
-        tbody [] (List.map (listingRow address userId) model.listings)
+        tbody [] (List.map (listingRow address userId) (log "kkk" model).listings)
     ]
   ]
 
 -- Helper Methods
-checkHelped : Listing -> Maybe(String) -> String
-checkHelped listing userId =
-  case userId of
-    Just userId' -> if fst (foldl isUserPresent (False, userId') listing.users) then "disabled" else ""
-
-    Nothing -> "disabled"
-
-isUserPresent : User -> (Bool, String) -> (Bool, String)
-isUserPresent user (acc, userId) =
-  if acc == False then ((user.id == userId), userId) else (acc, userId)
+checkClosed : Listing -> String
+checkClosed listing =
+  if listing.closed == True then "disabled" else ""

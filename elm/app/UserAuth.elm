@@ -72,7 +72,7 @@ update action model =
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-  div [] [
+  div [class "container"] [
     div [class "col-sm-6"] [
       h3 [] [text "Login"],
       Html.form [class "form-horizontal"] [

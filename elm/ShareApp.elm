@@ -2,6 +2,8 @@ module ShareApp where
 
 import ListingList
 import ListingEntity
+import MyListings
+import ParticipatedListings
 import UserAuth
 import Routes exposing (..)
 import ServerEndpoints
@@ -22,6 +24,8 @@ type alias Model = WithRoute Routes.Route {
     userAuthModel : UserAuth.Model,
     listingListModel : ListingList.Model,
     listingEntityModel : ListingEntity.Model,
+    myListingsModel : MyListings.Model,
+    participatedListingsModel : ParticipatedListings.Model,
     userId: Maybe (String)
   }
 
@@ -30,6 +34,8 @@ type Action =
   | UserAuthAction UserAuth.Action
   | ListingListAction ListingList.Action
   | ListingEntityAction ListingEntity.Action
+  | MyListingsAction MyListings.Action
+  | ParticipatedListingsAction ParticipatedListings.Action
   | RouterAction (TransitRouter.Action Routes.Route)
   | LogoutAction
 
@@ -39,6 +45,8 @@ initialModel = {
     userAuthModel = UserAuth.init,
     listingListModel = ListingList.init,
     listingEntityModel = ListingEntity.init,
+    myListingsModel = MyListings.init,
+    participatedListingsModel = ParticipatedListings.init,
     userId = Nothing
   }
 
@@ -59,6 +67,22 @@ mountRoute prevRoute route model =
 
     ListingEntityPage listingId ->
       (model, Effects.map ListingEntityAction (ServerEndpoints.getListing listingId ListingEntity.ShowListing))
+
+    MyListingsPage ->
+      case (log "mmmm" model).userId of
+        Nothing ->
+          (model, Effects.none)
+
+        Just userId ->
+          (model, Effects.map MyListingsAction (ServerEndpoints.getCreatorListings userId MyListings.HandleListingsRetrieved))
+
+    ParticipatedListingsPage ->
+      case (log "mmmm" model).userId of
+        Nothing ->
+          (model, Effects.none)
+
+        Just userId ->
+          (model, Effects.map ParticipatedListingsAction (ServerEndpoints.getParticipatedListings userId ParticipatedListings.HandleListingsRetrieved))
 
     NewListingPage ->
       ({ model | listingEntityModel = ListingEntity.init } , Effects.none)
@@ -101,6 +125,22 @@ update action model =
       in ( { model | listingEntityModel = model' }
          , Effects.map ListingEntityAction effects )
 
+    MyListingsAction act ->
+      case (log "test222" model.userId) of
+        Nothing -> (model, Effects.none)
+        Just userId' ->
+          let (model', effects) = MyListings.update act model.myListingsModel userId'
+          in ( { model | myListingsModel = (log "aa" model')}
+              , Effects.map MyListingsAction effects )
+
+    ParticipatedListingsAction act ->
+      case (log "test222" model.userId) of
+        Nothing -> (model, Effects.none)
+        Just userId' ->
+          let (model', effects) = ParticipatedListings.update act model.participatedListingsModel userId'
+          in ( { model | participatedListingsModel = (log "aa" model')}
+              , Effects.map ParticipatedListingsAction effects )
+
     RouterAction routeAction ->
       TransitRouter.update routerConfig routeAction model
 
@@ -117,8 +157,11 @@ menu address model =
             a (linkAttrs ListingListPage) [ text "NUSShare" ]
           ]
         ],
-        ul [class "nav navbar-nav"] [
-          li [] [a (linkAttrs ListingListPage) [ text "My Listings" ]]
+        ul [class "nav navbar-nav", hidden <| (model.userId == Nothing)] [
+          li [] [a (linkAttrs MyListingsPage) [ text "My Listings" ]]
+        ],
+        ul [class "nav navbar-nav", hidden <| (model.userId == Nothing)] [
+          li [] [a (linkAttrs ParticipatedListingsPage) [ text "Participated Listings" ]]
         ],
         div [class "navbar-right"] [
           ul [class "nav navbar-nav"] [
@@ -150,8 +193,14 @@ contentView address model =
     ListingEntityPage i ->
       ListingEntity.view (Signal.forwardTo address ListingEntityAction) model.listingEntityModel model.userId
 
-    NewListingPage  ->
+    NewListingPage ->
       ListingEntity.view (Signal.forwardTo address ListingEntityAction) model.listingEntityModel model.userId
+
+    MyListingsPage ->
+      MyListings.view (Signal.forwardTo address MyListingsAction) model.myListingsModel model.userId
+
+    ParticipatedListingsPage ->
+      ParticipatedListings.view (Signal.forwardTo address ParticipatedListingsAction) model.participatedListingsModel model.userId
 
     EmptyRoute ->
       text "Empty Route"

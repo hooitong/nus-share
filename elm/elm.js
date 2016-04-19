@@ -13152,11 +13152,23 @@ Elm.ServerEndpoints.make = function (_elm) {
    });
    var listingsDecoder = $Json$Decode.list(listingDecoder);
    var getListings = function (action) {    return $Effects.task(A2($Task.map,action,$Task.toMaybe(A2($Http.get,listingsDecoder,baseListingUrl))));};
+   var getCreatorListings = F2(function (id,action) {
+      return $Effects.task(A2($Task.map,
+      action,
+      $Task.toMaybe(A2($Http.get,listingsDecoder,A2($Basics._op["++"],baseListingUrl,A2($Basics._op["++"],"/created/",id))))));
+   });
+   var getParticipatedListings = F2(function (id,action) {
+      return $Effects.task(A2($Task.map,
+      action,
+      $Task.toMaybe(A2($Http.get,listingsDecoder,A2($Basics._op["++"],baseListingUrl,A2($Basics._op["++"],"/participated/",id))))));
+   });
    return _elm.ServerEndpoints.values = {_op: _op
                                         ,Listing: Listing
                                         ,baseListingUrl: baseListingUrl
                                         ,getListings: getListings
                                         ,getListing: getListing
+                                        ,getCreatorListings: getCreatorListings
+                                        ,getParticipatedListings: getParticipatedListings
                                         ,createListing: createListing
                                         ,updateListing: updateListing
                                         ,closeListing: closeListing
@@ -13200,6 +13212,8 @@ Elm.Routes.make = function (_elm) {
       switch (_p0.ctor)
       {case "UserAuthPage": return "/login";
          case "ListingListPage": return "/";
+         case "MyListingsPage": return "/me/created";
+         case "ParticipatedListingsPage": return "/me/participated";
          case "NewListingPage": return "/listings/new";
          case "ListingEntityPage": return A2($Basics._op["++"],"/listings/",_p0._0);
          default: return "";}
@@ -13221,11 +13235,15 @@ Elm.Routes.make = function (_elm) {
    };
    var EmptyRoute = {ctor: "EmptyRoute"};
    var NewListingPage = {ctor: "NewListingPage"};
+   var ParticipatedListingsPage = {ctor: "ParticipatedListingsPage"};
+   var MyListingsPage = {ctor: "MyListingsPage"};
    var ListingEntityPage = function (a) {    return {ctor: "ListingEntityPage",_0: a};};
    var ListingListPage = {ctor: "ListingListPage"};
    var UserAuthPage = {ctor: "UserAuthPage"};
    var routeParsers = _U.list([A2($RouteParser.$static,UserAuthPage,"/login")
                               ,A2($RouteParser.$static,ListingListPage,"/")
+                              ,A2($RouteParser.$static,MyListingsPage,"/me/created")
+                              ,A2($RouteParser.$static,ParticipatedListingsPage,"/me/participated")
                               ,A2($RouteParser.$static,NewListingPage,"/listings/new")
                               ,A4($RouteParser.dyn1,ListingEntityPage,"/listings/",$RouteParser.string,"")]);
    var decode = function (path) {    return A2($Maybe.withDefault,EmptyRoute,A2($RouteParser.match,routeParsers,path));};
@@ -13233,6 +13251,8 @@ Elm.Routes.make = function (_elm) {
                                ,UserAuthPage: UserAuthPage
                                ,ListingListPage: ListingListPage
                                ,ListingEntityPage: ListingEntityPage
+                               ,MyListingsPage: MyListingsPage
+                               ,ParticipatedListingsPage: ParticipatedListingsPage
                                ,NewListingPage: NewListingPage
                                ,EmptyRoute: EmptyRoute
                                ,routeParsers: routeParsers
@@ -13249,6 +13269,8 @@ Elm.ListingEntity.make = function (_elm) {
    if (_elm.ListingEntity.values) return _elm.ListingEntity.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
+   $Date = Elm.Date.make(_elm),
+   $Date$Format = Elm.Date.Format.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $Effects = Elm.Effects.make(_elm),
    $Html = Elm.Html.make(_elm),
@@ -13259,26 +13281,202 @@ Elm.ListingEntity.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Routes = Elm.Routes.make(_elm),
    $ServerEndpoints = Elm.ServerEndpoints.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm);
    var _op = {};
-   var pageTitle = function (model) {    var _p0 = model.id;if (_p0.ctor === "Just") {    return "Edit Listing";} else {    return "New Listing";}};
+   var userRow = F2(function (address,user) {
+      return A2($Html.tr,
+      _U.list([]),
+      _U.list([A2($Html.td,_U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),_U.list([$Html.text(user.name)]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(user.contact)]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(user.email)]))]));
+   });
+   var viewListing = F3(function (address,model,userId) {
+      return A2($Html.div,
+      _U.list([$Html$Attributes.$class("container")]),
+      _U.list([A2($Html.div,_U.list([$Html$Attributes.$class("row")]),_U.list([A2($Html.h2,_U.list([]),_U.list([$Html.text("View Listing")]))]))
+              ,A2($Html.div,
+              _U.list([$Html$Attributes.$class("row")]),
+              _U.list([A2($Html.table,
+              _U.list([$Html$Attributes.$class("table table-striped")]),
+              _U.list([A2($Html.thead,
+                      _U.list([]),
+                      _U.list([A2($Html.tr,
+                      _U.list([]),
+                      _U.list([A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-8")]),_U.list([]))]))]))
+                      ,A2($Html.tbody,
+                      _U.list([]),
+                      _U.list([A2($Html.tr,
+                              _U.list([]),
+                              _U.list([A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([A2($Html.h4,_U.list([]),_U.list([$Html.text("Title")]))]))
+                                      ,A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([$Html.text(model.title)]))]))
+                              ,A2($Html.tr,
+                              _U.list([]),
+                              _U.list([A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([A2($Html.h4,_U.list([]),_U.list([$Html.text("Type")]))]))
+                                      ,A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([$Html.text(model.lType)]))]))
+                              ,A2($Html.tr,
+                              _U.list([]),
+                              _U.list([A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([A2($Html.h4,_U.list([]),_U.list([$Html.text("Content")]))]))
+                                      ,A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([$Html.text(model.content)]))]))
+                              ,A2($Html.tr,
+                              _U.list([]),
+                              _U.list([A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([A2($Html.h4,_U.list([]),_U.list([$Html.text("Venue")]))]))
+                                      ,A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([$Html.text(model.venue)]))]))
+                              ,A2($Html.tr,
+                              _U.list([]),
+                              _U.list([A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([A2($Html.h4,_U.list([]),_U.list([$Html.text("Start Date")]))]))
+                                      ,A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([$Html.text(A2($Date$Format.format,
+                                      "%d %b %Y %I:%M%p",
+                                      A2($Result.withDefault,$Date.fromTime(0),$Date.fromString(model.startDate))))]))]))
+                              ,A2($Html.tr,
+                              _U.list([]),
+                              _U.list([A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([A2($Html.h4,_U.list([]),_U.list([$Html.text("End Date")]))]))
+                                      ,A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([$Html.text(A2($Date$Format.format,
+                                      "%d %b %Y %I:%M%p",
+                                      A2($Result.withDefault,$Date.fromTime(0),$Date.fromString(model.endDate))))]))]))
+                              ,A2($Html.tr,
+                              _U.list([]),
+                              _U.list([A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([A2($Html.h4,_U.list([]),_U.list([$Html.text("Limit")]))]))
+                                      ,A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([$Html.text($Basics.toString(model.limit))]))]))
+                              ,A2($Html.tr,
+                              _U.list([]),
+                              _U.list([A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([A2($Html.h4,_U.list([]),_U.list([$Html.text("Closed")]))]))
+                                      ,A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([$Html.text($Basics.toString(A2($Debug.log,"Test99",model).closed))]))]))
+                              ,A2($Html.tr,
+                              _U.list([]),
+                              _U.list([A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([A2($Html.h4,_U.list([]),_U.list([$Html.text("Creator")]))]))
+                                      ,A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([A2($Html.table,
+                                      _U.list([$Html$Attributes.$class("table table-striped table-hover table-condensed")]),
+                                      _U.list([A2($Html.thead,
+                                              _U.list([]),
+                                              _U.list([A2($Html.tr,
+                                              _U.list([]),
+                                              _U.list([A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-4")]),_U.list([$Html.text("Name")]))
+                                                      ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-4")]),_U.list([$Html.text("Contact")]))
+                                                      ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-4")]),_U.list([$Html.text("Email")]))]))]))
+                                              ,A2($Html.tbody,
+                                              _U.list([]),
+                                              function () {
+                                                 var _p0 = model.creator;
+                                                 if (_p0.ctor === "Nothing") {
+                                                       return _U.list([]);
+                                                    } else {
+                                                       var _p1 = _p0._0;
+                                                       return _U.list([A2($Html.tr,
+                                                       _U.list([]),
+                                                       _U.list([A2($Html.td,
+                                                               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2"
+                                                                                                        ,_0: "vertical-align"
+                                                                                                        ,_1: "middle"}]))]),
+                                                               _U.list([$Html.text(_p1.name)]))
+                                                               ,A2($Html.td,
+                                                               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2"
+                                                                                                        ,_0: "vertical-align"
+                                                                                                        ,_1: "middle"}]))]),
+                                                               _U.list([$Html.text(_p1.contact)]))
+                                                               ,A2($Html.td,
+                                                               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2"
+                                                                                                        ,_0: "vertical-align"
+                                                                                                        ,_1: "middle"}]))]),
+                                                               _U.list([$Html.text(_p1.email)]))]))]);
+                                                    }
+                                              }())]))]))]))
+                              ,A2($Html.tr,
+                              _U.list([]),
+                              _U.list([A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([A2($Html.h4,_U.list([]),_U.list([$Html.text("Signups")]))]))
+                                      ,A2($Html.td,
+                                      _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+                                      _U.list([A2($Html.table,
+                                      _U.list([$Html$Attributes.$class("table table-striped table-hover table-condensed")]),
+                                      _U.list([A2($Html.thead,
+                                              _U.list([]),
+                                              _U.list([A2($Html.tr,
+                                              _U.list([]),
+                                              _U.list([A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-4")]),_U.list([$Html.text("Name")]))
+                                                      ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-4")]),_U.list([$Html.text("Contact")]))
+                                                      ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-4")]),_U.list([$Html.text("Email")]))]))]))
+                                              ,A2($Html.tbody,
+                                              _U.list([]),
+                                              function () {
+                                                 var _p2 = model.users;
+                                                 if (_p2.ctor === "Nothing") {
+                                                       return _U.list([]);
+                                                    } else {
+                                                       return A2($List.map,userRow(address),_p2._0);
+                                                    }
+                                              }())]))]))]))]))]))]))]));
+   });
+   var SetListingLimit = function (a) {    return {ctor: "SetListingLimit",_0: a};};
+   var SetListingEnd = function (a) {    return {ctor: "SetListingEnd",_0: a};};
+   var SetListingStart = function (a) {    return {ctor: "SetListingStart",_0: a};};
+   var SetListingVenue = function (a) {    return {ctor: "SetListingVenue",_0: a};};
+   var SetListingContent = function (a) {    return {ctor: "SetListingContent",_0: a};};
+   var SetListinglType = function (a) {    return {ctor: "SetListinglType",_0: a};};
+   var SetListingTitle = function (a) {    return {ctor: "SetListingTitle",_0: a};};
    var HandleSaved = function (a) {    return {ctor: "HandleSaved",_0: a};};
    var SaveListing = {ctor: "SaveListing"};
-   var SetListingTitle = function (a) {    return {ctor: "SetListingTitle",_0: a};};
-   var view = F3(function (address,model,userId) {
+   var viewCreate = F3(function (address,model,userId) {
       return A2($Html.div,
-      _U.list([]),
-      _U.list([A2($Html.h1,_U.list([]),_U.list([$Html.text(pageTitle(A2($Debug.log,"model",model)))]))
-              ,A2($Html.form,
+      _U.list([$Html$Attributes.$class("container")]),
+      _U.list([A2($Html.div,
+              _U.list([$Html$Attributes.$class("row")]),
+              _U.list([A2($Html.h2,_U.list([$Html$Attributes.$class("col-md-offset-2")]),_U.list([$Html.text("Create Listing")]))]))
+              ,A2($Html.br,_U.list([]),_U.list([]))
+              ,A2($Html.div,
+              _U.list([$Html$Attributes.$class("row")]),
+              _U.list([A2($Html.form,
               _U.list([$Html$Attributes.$class("form-horizontal")]),
               _U.list([A2($Html.div,
                       _U.list([$Html$Attributes.$class("form-group")]),
                       _U.list([A2($Html.label,_U.list([$Html$Attributes.$class("col-sm-2 control-label")]),_U.list([$Html.text("Title")]))
                               ,A2($Html.div,
-                              _U.list([$Html$Attributes.$class("col-sm-10")]),
+                              _U.list([$Html$Attributes.$class("col-sm-8")]),
                               _U.list([A2($Html.input,
-                              _U.list([$Html$Attributes.$class("form-control")
-                                      ,$Html$Attributes.value(model.title)
+                              _U.list([$Html$Attributes.placeholder("Event Party")
+                                      ,$Html$Attributes.$class("form-control")
                                       ,A3($Html$Events.on,
                                       "input",
                                       $Html$Events.targetValue,
@@ -13288,69 +13486,212 @@ Elm.ListingEntity.make = function (_elm) {
                               _U.list([]))]))]))
                       ,A2($Html.div,
                       _U.list([$Html$Attributes.$class("form-group")]),
+                      _U.list([A2($Html.label,_U.list([$Html$Attributes.$class("col-sm-2 control-label")]),_U.list([$Html.text("Type")]))
+                              ,A2($Html.div,
+                              _U.list([$Html$Attributes.$class("col-sm-4")]),
+                              _U.list([A2($Html.input,
+                              _U.list([$Html$Attributes.placeholder("Help Needed")
+                                      ,$Html$Attributes.$class("form-control")
+                                      ,A3($Html$Events.on,
+                                      "input",
+                                      $Html$Events.targetValue,
+                                      function (str) {
+                                         return A2($Signal.message,address,SetListinglType(str));
+                                      })]),
+                              _U.list([]))]))]))
+                      ,A2($Html.div,
+                      _U.list([$Html$Attributes.$class("form-group")]),
+                      _U.list([A2($Html.label,_U.list([$Html$Attributes.$class("col-sm-2 control-label")]),_U.list([$Html.text("Content")]))
+                              ,A2($Html.div,
+                              _U.list([$Html$Attributes.$class("col-sm-8")]),
+                              _U.list([A2($Html.textarea,
+                              _U.list([$Html$Attributes.placeholder("This party is about...")
+                                      ,$Html$Attributes.$class("form-control")
+                                      ,A3($Html$Events.on,
+                                      "input",
+                                      $Html$Events.targetValue,
+                                      function (str) {
+                                         return A2($Signal.message,address,SetListingContent(str));
+                                      })]),
+                              _U.list([]))]))]))
+                      ,A2($Html.div,
+                      _U.list([$Html$Attributes.$class("form-group")]),
+                      _U.list([A2($Html.label,_U.list([$Html$Attributes.$class("col-sm-2 control-label")]),_U.list([$Html.text("Venue")]))
+                              ,A2($Html.div,
+                              _U.list([$Html$Attributes.$class("col-sm-8")]),
+                              _U.list([A2($Html.input,
+                              _U.list([$Html$Attributes.placeholder("NUS Hall 5")
+                                      ,$Html$Attributes.$class("form-control")
+                                      ,A3($Html$Events.on,
+                                      "input",
+                                      $Html$Events.targetValue,
+                                      function (str) {
+                                         return A2($Signal.message,address,SetListingVenue(str));
+                                      })]),
+                              _U.list([]))]))]))
+                      ,A2($Html.div,
+                      _U.list([$Html$Attributes.$class("form-group")]),
+                      _U.list([A2($Html.label,_U.list([$Html$Attributes.$class("col-sm-2 control-label")]),_U.list([$Html.text("Start Date")]))
+                              ,A2($Html.div,
+                              _U.list([$Html$Attributes.$class("col-sm-4")]),
+                              _U.list([A2($Html.input,
+                              _U.list([$Html$Attributes.placeholder("25 September 2016 7pm")
+                                      ,$Html$Attributes.$class("form-control")
+                                      ,A3($Html$Events.on,
+                                      "input",
+                                      $Html$Events.targetValue,
+                                      function (str) {
+                                         return A2($Signal.message,address,SetListingStart(str));
+                                      })]),
+                              _U.list([]))]))]))
+                      ,A2($Html.div,
+                      _U.list([$Html$Attributes.$class("form-group")]),
+                      _U.list([A2($Html.label,_U.list([$Html$Attributes.$class("col-sm-2 control-label")]),_U.list([$Html.text("End Date")]))
+                              ,A2($Html.div,
+                              _U.list([$Html$Attributes.$class("col-sm-4")]),
+                              _U.list([A2($Html.input,
+                              _U.list([$Html$Attributes.placeholder("26 September 2016 8pm")
+                                      ,$Html$Attributes.$class("form-control")
+                                      ,A3($Html$Events.on,
+                                      "input",
+                                      $Html$Events.targetValue,
+                                      function (str) {
+                                         return A2($Signal.message,address,SetListingEnd(str));
+                                      })]),
+                              _U.list([]))]))]))
+                      ,A2($Html.div,
+                      _U.list([$Html$Attributes.$class("form-group")]),
+                      _U.list([A2($Html.label,_U.list([$Html$Attributes.$class("col-sm-2 control-label")]),_U.list([$Html.text("Limit")]))
+                              ,A2($Html.div,
+                              _U.list([$Html$Attributes.$class("col-sm-2")]),
+                              _U.list([A2($Html.input,
+                              _U.list([$Html$Attributes.placeholder("5")
+                                      ,$Html$Attributes.$class("form-control")
+                                      ,A3($Html$Events.on,
+                                      "input",
+                                      $Html$Events.targetValue,
+                                      function (str) {
+                                         return A2($Signal.message,address,SetListingLimit(str));
+                                      })]),
+                              _U.list([]))]))]))
+                      ,A2($Html.div,
+                      _U.list([$Html$Attributes.$class("form-group")]),
                       _U.list([A2($Html.div,
                       _U.list([$Html$Attributes.$class("col-sm-offset-2 col-sm-10")]),
                       _U.list([A2($Html.button,
-                      _U.list([$Html$Attributes.$class("btn btn-default"),$Html$Attributes.type$("button"),A2($Html$Events.onClick,address,SaveListing)]),
-                      _U.list([$Html.text("Save")]))]))]))]))]));
+                      _U.list([$Html$Attributes.$class("btn btn-success"),$Html$Attributes.type$("button"),A2($Html$Events.onClick,address,SaveListing)]),
+                      _U.list([$Html.text("Save")]))]))]))]))]))]));
+   });
+   var view = F3(function (address,model,userId) {
+      var _p3 = model.id;
+      if (_p3.ctor === "Just") {
+            return A3(viewListing,address,model,userId);
+         } else {
+            return A3(viewCreate,address,model,userId);
+         }
    });
    var ShowListing = function (a) {    return {ctor: "ShowListing",_0: a};};
    var GetListing = function (a) {    return {ctor: "GetListing",_0: a};};
    var NoOp = {ctor: "NoOp"};
+   var Model = function (a) {
+      return function (b) {
+         return function (c) {
+            return function (d) {
+               return function (e) {
+                  return function (f) {
+                     return function (g) {
+                        return function (h) {
+                           return function (i) {
+                              return function (j) {
+                                 return function (k) {
+                                    return {id: a,title: b,lType: c,content: d,venue: e,startDate: f,endDate: g,limit: h,closed: i,creator: j,users: k};
+                                 };
+                              };
+                           };
+                        };
+                     };
+                  };
+               };
+            };
+         };
+      };
+   };
+   var init = Model($Maybe.Nothing)("")("")("")("")("")("")(0)(false)($Maybe.Nothing)($Maybe.Nothing);
    var update = F2(function (action,model) {
-      var _p1 = action;
-      switch (_p1.ctor)
+      var _p4 = action;
+      switch (_p4.ctor)
       {case "NoOp": return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
-         case "GetListing": return {ctor: "_Tuple2",_0: model,_1: A2($ServerEndpoints.getListing,A2($Debug.log,"id",_p1._0),ShowListing)};
-         case "ShowListing": var _p2 = _p1._0;
-           if (_p2.ctor === "Just") {
-                 var _p3 = _p2._0;
-                 return {ctor: "_Tuple2",_0: _U.update(model,{id: $Maybe.Just(_p3.id),title: _p3.title}),_1: $Effects.none};
-              } else {
-                 return {ctor: "_Tuple2",_0: _U.update(model,{id: $Maybe.Nothing,title: ""}),_1: $Effects.none};
-              }
-         case "SaveListing": var _p4 = model.id;
-           if (_p4.ctor === "Just") {
-                 return {ctor: "_Tuple2"
-                        ,_0: model
-                        ,_1: A3($ServerEndpoints.updateListing,
-                        _p4._0,
-                        {title: model.title
-                        ,lType: model.lType
-                        ,content: model.content
-                        ,venue: model.venue
-                        ,startDate: model.startDate
-                        ,endDate: model.endDate
-                        ,limit: model.limit
-                        ,closed: model.closed},
-                        HandleSaved)};
-              } else {
-                 return {ctor: "_Tuple2"
-                        ,_0: model
-                        ,_1: A2($ServerEndpoints.createListing,
-                        {title: model.title
-                        ,lType: model.lType
-                        ,content: model.content
-                        ,venue: model.venue
-                        ,startDate: model.startDate
-                        ,endDate: model.endDate
-                        ,limit: model.limit
-                        ,closed: model.closed},
-                        HandleSaved)};
-              }
-         case "HandleSaved": var _p5 = _p1._0;
+         case "GetListing": return {ctor: "_Tuple2",_0: model,_1: A2($ServerEndpoints.getListing,A2($Debug.log,"id",_p4._0),ShowListing)};
+         case "ShowListing": var _p5 = _p4._0;
            if (_p5.ctor === "Just") {
-                 var _p7 = _p5._0;
+                 var _p6 = _p5._0;
                  return {ctor: "_Tuple2"
-                        ,_0: _U.update(model,{id: $Maybe.Just(_p7.id),title: _p7.title})
-                        ,_1: A2($Effects.map,function (_p6) {    return NoOp;},$Routes.redirect($Routes.ListingListPage))};
+                        ,_0: _U.update(model,
+                        {id: $Maybe.Just(_p6.id)
+                        ,title: _p6.title
+                        ,lType: _p6.lType
+                        ,content: _p6.content
+                        ,venue: _p6.venue
+                        ,startDate: _p6.startDate
+                        ,endDate: _p6.endDate
+                        ,limit: _p6.limit
+                        ,closed: _p6.closed
+                        ,creator: $Maybe.Just(_p6.creator)
+                        ,users: $Maybe.Just(_p6.users)})
+                        ,_1: $Effects.none};
               } else {
-                 return _U.crashCase("ListingEntity",{start: {line: 66,column: 7},end: {line: 74,column: 53}},_p5)("Something wrong when saving.");
+                 return {ctor: "_Tuple2",_0: init,_1: $Effects.none};
               }
-         default: return {ctor: "_Tuple2",_0: _U.update(model,{title: _p1._0}),_1: $Effects.none};}
+         case "SaveListing": return {ctor: "_Tuple2"
+                                    ,_0: model
+                                    ,_1: A2($ServerEndpoints.createListing,
+                                    {title: model.title
+                                    ,lType: model.lType
+                                    ,content: model.content
+                                    ,venue: model.venue
+                                    ,startDate: model.startDate
+                                    ,endDate: model.endDate
+                                    ,limit: model.limit
+                                    ,closed: model.closed},
+                                    HandleSaved)};
+         case "HandleSaved": var _p7 = _p4._0;
+           if (_p7.ctor === "Just") {
+                 var _p9 = _p7._0;
+                 return {ctor: "_Tuple2"
+                        ,_0: _U.update(model,
+                        {id: $Maybe.Just(_p9.id)
+                        ,title: _p9.title
+                        ,lType: _p9.lType
+                        ,content: _p9.content
+                        ,venue: _p9.venue
+                        ,startDate: _p9.startDate
+                        ,endDate: _p9.endDate
+                        ,limit: _p9.limit
+                        ,closed: _p9.closed
+                        ,creator: $Maybe.Just(_p9.creator)
+                        ,users: $Maybe.Just(_p9.users)})
+                        ,_1: A2($Effects.map,function (_p8) {    return NoOp;},$Routes.redirect($Routes.ListingListPage))};
+              } else {
+                 return _U.crashCase("ListingEntity",{start: {line: 79,column: 7},end: {line: 97,column: 53}},_p7)("Something wrong when saving.");
+              }
+         case "SetListingTitle": return {ctor: "_Tuple2",_0: _U.update(model,{title: _p4._0}),_1: $Effects.none};
+         case "SetListinglType": return {ctor: "_Tuple2",_0: _U.update(model,{lType: _p4._0}),_1: $Effects.none};
+         case "SetListingContent": return {ctor: "_Tuple2",_0: _U.update(model,{content: _p4._0}),_1: $Effects.none};
+         case "SetListingVenue": return {ctor: "_Tuple2",_0: _U.update(model,{venue: _p4._0}),_1: $Effects.none};
+         case "SetListingStart": return {ctor: "_Tuple2",_0: _U.update(model,{startDate: _p4._0}),_1: $Effects.none};
+         case "SetListingEnd": return {ctor: "_Tuple2",_0: _U.update(model,{endDate: _p4._0}),_1: $Effects.none};
+         default: return {ctor: "_Tuple2"
+                         ,_0: _U.update(model,
+                         {limit: function () {
+                            var _p11 = $String.toInt(_p4._0);
+                            if (_p11.ctor === "Ok") {
+                                  return _p11._0;
+                               } else {
+                                  return 1;
+                               }
+                         }()})
+                         ,_1: $Effects.none};}
    });
-   var Model = F9(function (a,b,c,d,e,f,g,h,i) {    return {id: a,title: b,lType: c,content: d,venue: e,startDate: f,endDate: g,limit: h,closed: i};});
-   var init = A9(Model,$Maybe.Nothing,"","","","","","",0,false);
    return _elm.ListingEntity.values = {_op: _op
                                       ,init: init
                                       ,view: view
@@ -13359,9 +13700,15 @@ Elm.ListingEntity.make = function (_elm) {
                                       ,NoOp: NoOp
                                       ,GetListing: GetListing
                                       ,ShowListing: ShowListing
-                                      ,SetListingTitle: SetListingTitle
                                       ,SaveListing: SaveListing
-                                      ,HandleSaved: HandleSaved};
+                                      ,HandleSaved: HandleSaved
+                                      ,SetListingTitle: SetListingTitle
+                                      ,SetListinglType: SetListinglType
+                                      ,SetListingContent: SetListingContent
+                                      ,SetListingVenue: SetListingVenue
+                                      ,SetListingStart: SetListingStart
+                                      ,SetListingEnd: SetListingEnd
+                                      ,SetListingLimit: SetListingLimit};
 };
 Elm.ListingList = Elm.ListingList || {};
 Elm.ListingList.make = function (_elm) {
@@ -13399,7 +13746,7 @@ Elm.ListingList.make = function (_elm) {
             return "disabled";
          }
    });
-   var HandleListingClosed = function (a) {    return {ctor: "HandleListingClosed",_0: a};};
+   var HandleUserParticipation = function (a) {    return {ctor: "HandleUserParticipation",_0: a};};
    var RegisterUser = function (a) {    return {ctor: "RegisterUser",_0: a};};
    var listingRow = F3(function (address,userId,listing) {
       return A2($Html.tr,
@@ -13420,7 +13767,7 @@ Elm.ListingList.make = function (_elm) {
               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
               _U.list([$Html.text(A2($Date$Format.format,"%d %b %Y %I:%M%p",A2($Result.withDefault,$Date.fromTime(0),$Date.fromString(listing.endDate))))]))
               ,A2($Html.td,
-              _U.list([]),
+              _U.list([$Html$Attributes.$class("pull-right")]),
               _U.list([A2($Html.div,
               _U.list([$Html$Attributes.$class("btn-group")]),
               _U.list([A2($Html.button,
@@ -13433,12 +13780,22 @@ Elm.ListingList.make = function (_elm) {
    });
    var view = F3(function (address,model,userId) {
       return A2($Html.div,
-      _U.list([]),
+      _U.list([$Html$Attributes.$class("container")]),
       _U.list([A2($Html.h2,
               _U.list([]),
               _U.list([$Html.text("Available Listings")
                       ,A2($Html.button,
-                      _U.list([$Html$Attributes.$class("pull-right btn btn-default"),$Routes.clickAttr($Routes.NewListingPage)]),
+                      _U.list([$Html$Attributes.$class(A2($Basics._op["++"],
+                              "pull-right btn btn-default ",
+                              function () {
+                                 var _p5 = userId;
+                                 if (_p5.ctor === "Just") {
+                                       return "";
+                                    } else {
+                                       return "hidden";
+                                    }
+                              }()))
+                              ,$Routes.clickAttr($Routes.NewListingPage)]),
                       _U.list([$Html.text("New Listing")]))]))
               ,A2($Html.table,
               _U.list([$Html$Attributes.$class("table table-striped")]),
@@ -13446,25 +13803,23 @@ Elm.ListingList.make = function (_elm) {
                       _U.list([]),
                       _U.list([A2($Html.tr,
                       _U.list([]),
-                      _U.list([A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-3")]),_U.list([$Html.text("Title")]))
+                      _U.list([A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Title")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Creator")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Venue")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Start Date")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("End Date")]))
-                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-1")]),_U.list([]))]))]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([]))]))]))
                       ,A2($Html.tbody,_U.list([]),A2($List.map,A2(listingRow,address,userId),model.listings))]))]));
    });
-   var CloseListing = function (a) {    return {ctor: "CloseListing",_0: a};};
    var HandleListingsRetrieved = function (a) {    return {ctor: "HandleListingsRetrieved",_0: a};};
    var update = F3(function (action,model,userId) {
-      var _p5 = action;
-      switch (_p5.ctor)
+      var _p6 = action;
+      switch (_p6.ctor)
       {case "Show": return {ctor: "_Tuple2",_0: model,_1: $ServerEndpoints.getListings(HandleListingsRetrieved)};
-         case "HandleListingsRetrieved": return {ctor: "_Tuple2",_0: _U.update(model,{listings: A2($Maybe.withDefault,_U.list([]),_p5._0)}),_1: $Effects.none};
-         case "CloseListing": return {ctor: "_Tuple2",_0: model,_1: A2($ServerEndpoints.closeListing,_p5._0,HandleListingClosed)};
-         case "RegisterUser": var _p6 = A2($Debug.log,"test111",userId);
-           if (_p6.ctor === "Just") {
-                 return {ctor: "_Tuple2",_0: model,_1: A3($ServerEndpoints.registerUser,_p5._0,A2($Debug.log,"test22",_p6._0),HandleListingClosed)};
+         case "HandleListingsRetrieved": return {ctor: "_Tuple2",_0: _U.update(model,{listings: A2($Maybe.withDefault,_U.list([]),_p6._0)}),_1: $Effects.none};
+         case "RegisterUser": var _p7 = A2($Debug.log,"test111",userId);
+           if (_p7.ctor === "Just") {
+                 return {ctor: "_Tuple2",_0: model,_1: A3($ServerEndpoints.registerUser,_p6._0,A2($Debug.log,"test22",_p7._0),HandleUserParticipation)};
               } else {
                  return {ctor: "_Tuple2",_0: model,_1: $ServerEndpoints.getListings(HandleListingsRetrieved)};
               }
@@ -13480,9 +13835,187 @@ Elm.ListingList.make = function (_elm) {
                                     ,Model: Model
                                     ,Show: Show
                                     ,HandleListingsRetrieved: HandleListingsRetrieved
-                                    ,CloseListing: CloseListing
                                     ,RegisterUser: RegisterUser
-                                    ,HandleListingClosed: HandleListingClosed};
+                                    ,HandleUserParticipation: HandleUserParticipation};
+};
+Elm.MyListings = Elm.MyListings || {};
+Elm.MyListings.make = function (_elm) {
+   "use strict";
+   _elm.MyListings = _elm.MyListings || {};
+   if (_elm.MyListings.values) return _elm.MyListings.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Date = Elm.Date.make(_elm),
+   $Date$Format = Elm.Date.Format.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Effects = Elm.Effects.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $Html$Events = Elm.Html.Events.make(_elm),
+   $Http = Elm.Http.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Routes = Elm.Routes.make(_elm),
+   $ServerEndpoints = Elm.ServerEndpoints.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var checkClosed = function (listing) {    return _U.eq(listing.closed,true) ? "disabled" : "";};
+   var HandleListingClosed = function (a) {    return {ctor: "HandleListingClosed",_0: a};};
+   var CloseListing = function (a) {    return {ctor: "CloseListing",_0: a};};
+   var listingRow = F3(function (address,userId,listing) {
+      return A2($Html.tr,
+      _U.list([]),
+      _U.list([A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(listing.title)]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(listing.creator.name)]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(listing.venue)]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(A2($Date$Format.format,"%d %b %Y %I:%M%p",A2($Result.withDefault,$Date.fromTime(0),$Date.fromString(listing.startDate))))]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(A2($Date$Format.format,"%d %b %Y %I:%M%p",A2($Result.withDefault,$Date.fromTime(0),$Date.fromString(listing.endDate))))]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.$class("pull-right")]),
+              _U.list([A2($Html.div,
+              _U.list([$Html$Attributes.$class("btn-group")]),
+              _U.list([A2($Html.button,
+                      _U.list([$Html$Attributes.$class("btn btn-default"),$Routes.clickAttr($Routes.ListingEntityPage(listing.id))]),
+                      _U.list([$Html.text("View")]))
+                      ,A2($Html.button,
+                      _U.list([$Html$Attributes.$class(A2($Basics._op["++"],"btn btn-danger ",checkClosed(listing)))
+                              ,A2($Html$Events.onClick,address,CloseListing(listing.id))]),
+                      _U.list([$Html.text("Close")]))]))]))]));
+   });
+   var view = F3(function (address,model,userId) {
+      return A2($Html.div,
+      _U.list([$Html$Attributes.$class("container")]),
+      _U.list([A2($Html.h2,_U.list([]),_U.list([$Html.text("My Listings")]))
+              ,A2($Html.table,
+              _U.list([$Html$Attributes.$class("table table-striped")]),
+              _U.list([A2($Html.thead,
+                      _U.list([]),
+                      _U.list([A2($Html.tr,
+                      _U.list([]),
+                      _U.list([A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Title")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Creator")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Venue")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Start Date")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("End Date")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([]))]))]))
+                      ,A2($Html.tbody,_U.list([]),A2($List.map,A2(listingRow,address,userId),A2($Debug.log,"kkk",model).listings))]))]));
+   });
+   var HandleListingsRetrieved = function (a) {    return {ctor: "HandleListingsRetrieved",_0: a};};
+   var update = F3(function (action,model,userId) {
+      var _p0 = action;
+      switch (_p0.ctor)
+      {case "Show": return {ctor: "_Tuple2",_0: model,_1: A2($ServerEndpoints.getCreatorListings,userId,HandleListingsRetrieved)};
+         case "HandleListingsRetrieved": return {ctor: "_Tuple2",_0: _U.update(model,{listings: A2($Maybe.withDefault,_U.list([]),_p0._0)}),_1: $Effects.none};
+         case "CloseListing": return {ctor: "_Tuple2",_0: model,_1: A2($ServerEndpoints.closeListing,_p0._0,HandleListingClosed)};
+         default: return {ctor: "_Tuple2",_0: model,_1: A2($ServerEndpoints.getCreatorListings,userId,HandleListingsRetrieved)};}
+   });
+   var Show = {ctor: "Show"};
+   var Model = function (a) {    return {listings: a};};
+   var init = Model(_U.list([]));
+   return _elm.MyListings.values = {_op: _op
+                                   ,init: init
+                                   ,view: view
+                                   ,update: update
+                                   ,Model: Model
+                                   ,Show: Show
+                                   ,HandleListingsRetrieved: HandleListingsRetrieved
+                                   ,CloseListing: CloseListing
+                                   ,HandleListingClosed: HandleListingClosed};
+};
+Elm.ParticipatedListings = Elm.ParticipatedListings || {};
+Elm.ParticipatedListings.make = function (_elm) {
+   "use strict";
+   _elm.ParticipatedListings = _elm.ParticipatedListings || {};
+   if (_elm.ParticipatedListings.values) return _elm.ParticipatedListings.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Date = Elm.Date.make(_elm),
+   $Date$Format = Elm.Date.Format.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Effects = Elm.Effects.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Routes = Elm.Routes.make(_elm),
+   $ServerEndpoints = Elm.ServerEndpoints.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var listingRow = F3(function (address,userId,listing) {
+      return A2($Html.tr,
+      _U.list([]),
+      _U.list([A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(listing.title)]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(listing.creator.name)]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(listing.venue)]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(A2($Date$Format.format,"%d %b %Y %I:%M%p",A2($Result.withDefault,$Date.fromTime(0),$Date.fromString(listing.startDate))))]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(A2($Date$Format.format,"%d %b %Y %I:%M%p",A2($Result.withDefault,$Date.fromTime(0),$Date.fromString(listing.endDate))))]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.$class("pull-right")]),
+              _U.list([A2($Html.div,
+              _U.list([]),
+              _U.list([A2($Html.button,
+              _U.list([$Html$Attributes.$class("btn btn-default"),$Routes.clickAttr($Routes.ListingEntityPage(listing.id))]),
+              _U.list([$Html.text("View")]))]))]))]));
+   });
+   var view = F3(function (address,model,userId) {
+      return A2($Html.div,
+      _U.list([$Html$Attributes.$class("container")]),
+      _U.list([A2($Html.h2,_U.list([]),_U.list([$Html.text("Participated Listings")]))
+              ,A2($Html.table,
+              _U.list([$Html$Attributes.$class("table table-striped")]),
+              _U.list([A2($Html.thead,
+                      _U.list([]),
+                      _U.list([A2($Html.tr,
+                      _U.list([]),
+                      _U.list([A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Title")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Creator")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Venue")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Start Date")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("End Date")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([]))]))]))
+                      ,A2($Html.tbody,_U.list([]),A2($List.map,A2(listingRow,address,userId),A2($Debug.log,"kkk",model).listings))]))]));
+   });
+   var HandleListingsRetrieved = function (a) {    return {ctor: "HandleListingsRetrieved",_0: a};};
+   var update = F3(function (action,model,userId) {
+      var _p0 = action;
+      if (_p0.ctor === "Show") {
+            return {ctor: "_Tuple2",_0: model,_1: A2($ServerEndpoints.getCreatorListings,userId,HandleListingsRetrieved)};
+         } else {
+            return {ctor: "_Tuple2",_0: _U.update(model,{listings: A2($Maybe.withDefault,_U.list([]),_p0._0)}),_1: $Effects.none};
+         }
+   });
+   var Show = {ctor: "Show"};
+   var Model = function (a) {    return {listings: a};};
+   var init = Model(_U.list([]));
+   return _elm.ParticipatedListings.values = {_op: _op
+                                             ,init: init
+                                             ,view: view
+                                             ,update: update
+                                             ,Model: Model
+                                             ,Show: Show
+                                             ,HandleListingsRetrieved: HandleListingsRetrieved};
 };
 Elm.UserAuth = Elm.UserAuth || {};
 Elm.UserAuth.make = function (_elm) {
@@ -13512,7 +14045,7 @@ Elm.UserAuth.make = function (_elm) {
    var Authenticate = {ctor: "Authenticate"};
    var view = F2(function (address,model) {
       return A2($Html.div,
-      _U.list([]),
+      _U.list([$Html$Attributes.$class("container")]),
       _U.list([A2($Html.div,
               _U.list([$Html$Attributes.$class("col-sm-6")]),
               _U.list([A2($Html.h3,_U.list([]),_U.list([$Html.text("Login")]))
@@ -13706,6 +14239,8 @@ Elm.ShareApp.make = function (_elm) {
    $ListingEntity = Elm.ListingEntity.make(_elm),
    $ListingList = Elm.ListingList.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
+   $MyListings = Elm.MyListings.make(_elm),
+   $ParticipatedListings = Elm.ParticipatedListings.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Routes = Elm.Routes.make(_elm),
    $ServerEndpoints = Elm.ServerEndpoints.make(_elm),
@@ -13733,6 +14268,8 @@ Elm.ShareApp.make = function (_elm) {
                       ,userAuthModel: $UserAuth.init
                       ,listingListModel: $ListingList.init
                       ,listingEntityModel: $ListingEntity.init
+                      ,myListingsModel: $MyListings.init
+                      ,participatedListingsModel: $ParticipatedListings.init
                       ,userId: $Maybe.Nothing};
    var LogoutAction = {ctor: "LogoutAction"};
    var menu = F2(function (address,model) {
@@ -13746,8 +14283,13 @@ Elm.ShareApp.make = function (_elm) {
               _U.list([$Html$Attributes.$class("navbar-brand")]),
               _U.list([A2($Html.a,$Routes.linkAttrs($Routes.ListingListPage),_U.list([$Html.text("NUSShare")]))]))]))
               ,A2($Html.ul,
-              _U.list([$Html$Attributes.$class("nav navbar-nav")]),
-              _U.list([A2($Html.li,_U.list([]),_U.list([A2($Html.a,$Routes.linkAttrs($Routes.ListingListPage),_U.list([$Html.text("My Listings")]))]))]))
+              _U.list([$Html$Attributes.$class("nav navbar-nav"),$Html$Attributes.hidden(_U.eq(model.userId,$Maybe.Nothing))]),
+              _U.list([A2($Html.li,_U.list([]),_U.list([A2($Html.a,$Routes.linkAttrs($Routes.MyListingsPage),_U.list([$Html.text("My Listings")]))]))]))
+              ,A2($Html.ul,
+              _U.list([$Html$Attributes.$class("nav navbar-nav"),$Html$Attributes.hidden(_U.eq(model.userId,$Maybe.Nothing))]),
+              _U.list([A2($Html.li,
+              _U.list([]),
+              _U.list([A2($Html.a,$Routes.linkAttrs($Routes.ParticipatedListingsPage),_U.list([$Html.text("Participated Listings")]))]))]))
               ,A2($Html.div,
               _U.list([$Html$Attributes.$class("navbar-right")]),
               _U.list([A2($Html.ul,
@@ -13767,6 +14309,8 @@ Elm.ShareApp.make = function (_elm) {
    });
    var RouterAction = function (a) {    return {ctor: "RouterAction",_0: a};};
    var actions = A2($Signal.map,RouterAction,$TransitRouter.actions);
+   var ParticipatedListingsAction = function (a) {    return {ctor: "ParticipatedListingsAction",_0: a};};
+   var MyListingsAction = function (a) {    return {ctor: "MyListingsAction",_0: a};};
    var ListingEntityAction = function (a) {    return {ctor: "ListingEntityAction",_0: a};};
    var ListingListAction = function (a) {    return {ctor: "ListingListAction",_0: a};};
    var mountRoute = F3(function (prevRoute,route,model) {
@@ -13779,43 +14323,86 @@ Elm.ShareApp.make = function (_elm) {
          case "ListingEntityPage": return {ctor: "_Tuple2"
                                           ,_0: model
                                           ,_1: A2($Effects.map,ListingEntityAction,A2($ServerEndpoints.getListing,_p1._0,$ListingEntity.ShowListing))};
+         case "MyListingsPage": var _p2 = A2($Debug.log,"mmmm",model).userId;
+           if (_p2.ctor === "Nothing") {
+                 return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+              } else {
+                 return {ctor: "_Tuple2"
+                        ,_0: model
+                        ,_1: A2($Effects.map,MyListingsAction,A2($ServerEndpoints.getCreatorListings,_p2._0,$MyListings.HandleListingsRetrieved))};
+              }
+         case "ParticipatedListingsPage": var _p3 = A2($Debug.log,"mmmm",model).userId;
+           if (_p3.ctor === "Nothing") {
+                 return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+              } else {
+                 return {ctor: "_Tuple2"
+                        ,_0: model
+                        ,_1: A2($Effects.map,
+                        ParticipatedListingsAction,
+                        A2($ServerEndpoints.getParticipatedListings,_p3._0,$ParticipatedListings.HandleListingsRetrieved))};
+              }
          case "NewListingPage": return {ctor: "_Tuple2",_0: _U.update(model,{listingEntityModel: $ListingEntity.init}),_1: $Effects.none};
          default: return {ctor: "_Tuple2",_0: model,_1: $Effects.none};}
    });
    var routerConfig = {mountRoute: mountRoute
-                      ,getDurations: F3(function (_p4,_p3,_p2) {    return {ctor: "_Tuple2",_0: 50,_1: 200};})
+                      ,getDurations: F3(function (_p6,_p5,_p4) {    return {ctor: "_Tuple2",_0: 50,_1: 200};})
                       ,actionWrapper: RouterAction
                       ,routeDecoder: $Routes.decode};
    var init = function (path) {    return A3($TransitRouter.init,routerConfig,path,initialModel);};
    var UserAuthAction = function (a) {    return {ctor: "UserAuthAction",_0: a};};
    var update = F2(function (action,model) {
-      var _p5 = action;
-      switch (_p5.ctor)
+      var _p7 = action;
+      switch (_p7.ctor)
       {case "NoOp": return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
-         case "UserAuthAction": var _p6 = A2($UserAuth.update,_p5._0,model.userAuthModel);
-           var model$ = _p6._0;
-           var effects = _p6._1;
+         case "UserAuthAction": var _p8 = A2($UserAuth.update,_p7._0,model.userAuthModel);
+           var model$ = _p8._0;
+           var effects = _p8._1;
            return {ctor: "_Tuple2"
                   ,_0: _U.update(model,{userAuthModel: A2($Debug.log,"bb",model$),userId: model$.id})
                   ,_1: A2($Effects.map,UserAuthAction,effects)};
-         case "ListingListAction": var _p7 = A3($ListingList.update,_p5._0,model.listingListModel,model.userId);
-           var model$ = _p7._0;
-           var effects = _p7._1;
+         case "ListingListAction": var _p9 = A3($ListingList.update,_p7._0,model.listingListModel,model.userId);
+           var model$ = _p9._0;
+           var effects = _p9._1;
            return {ctor: "_Tuple2",_0: _U.update(model,{listingListModel: A2($Debug.log,"aa",model$)}),_1: A2($Effects.map,ListingListAction,effects)};
-         case "ListingEntityAction": var _p8 = A2($ListingEntity.update,_p5._0,model.listingEntityModel);
-           var model$ = _p8._0;
-           var effects = _p8._1;
+         case "ListingEntityAction": var _p10 = A2($ListingEntity.update,_p7._0,model.listingEntityModel);
+           var model$ = _p10._0;
+           var effects = _p10._1;
            return {ctor: "_Tuple2",_0: _U.update(model,{listingEntityModel: model$}),_1: A2($Effects.map,ListingEntityAction,effects)};
-         case "RouterAction": return A3($TransitRouter.update,routerConfig,_p5._0,model);
+         case "MyListingsAction": var _p11 = A2($Debug.log,"test222",model.userId);
+           if (_p11.ctor === "Nothing") {
+                 return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+              } else {
+                 var _p12 = A3($MyListings.update,_p7._0,model.myListingsModel,_p11._0);
+                 var model$ = _p12._0;
+                 var effects = _p12._1;
+                 return {ctor: "_Tuple2",_0: _U.update(model,{myListingsModel: A2($Debug.log,"aa",model$)}),_1: A2($Effects.map,MyListingsAction,effects)};
+              }
+         case "ParticipatedListingsAction": var _p13 = A2($Debug.log,"test222",model.userId);
+           if (_p13.ctor === "Nothing") {
+                 return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+              } else {
+                 var _p14 = A3($ParticipatedListings.update,_p7._0,model.participatedListingsModel,_p13._0);
+                 var model$ = _p14._0;
+                 var effects = _p14._1;
+                 return {ctor: "_Tuple2"
+                        ,_0: _U.update(model,{participatedListingsModel: A2($Debug.log,"aa",model$)})
+                        ,_1: A2($Effects.map,ParticipatedListingsAction,effects)};
+              }
+         case "RouterAction": return A3($TransitRouter.update,routerConfig,_p7._0,model);
          default: return {ctor: "_Tuple2",_0: _U.update(model,{userAuthModel: $UserAuth.init,userId: $Maybe.Nothing}),_1: $Effects.none};}
    });
    var contentView = F2(function (address,model) {
-      var _p9 = $TransitRouter.getRoute(model);
-      switch (_p9.ctor)
+      var _p15 = $TransitRouter.getRoute(model);
+      switch (_p15.ctor)
       {case "UserAuthPage": return A2($UserAuth.view,A2($Signal.forwardTo,address,UserAuthAction),model.userAuthModel);
          case "ListingListPage": return A3($ListingList.view,A2($Signal.forwardTo,address,ListingListAction),model.listingListModel,model.userId);
          case "ListingEntityPage": return A3($ListingEntity.view,A2($Signal.forwardTo,address,ListingEntityAction),model.listingEntityModel,model.userId);
          case "NewListingPage": return A3($ListingEntity.view,A2($Signal.forwardTo,address,ListingEntityAction),model.listingEntityModel,model.userId);
+         case "MyListingsPage": return A3($MyListings.view,A2($Signal.forwardTo,address,MyListingsAction),model.myListingsModel,model.userId);
+         case "ParticipatedListingsPage": return A3($ParticipatedListings.view,
+           A2($Signal.forwardTo,address,ParticipatedListingsAction),
+           model.participatedListingsModel,
+           model.userId);
          default: return $Html.text("Empty Route");}
    });
    var view = F2(function (address,model) {
@@ -13835,6 +14422,8 @@ Elm.ShareApp.make = function (_elm) {
                                  ,UserAuthAction: UserAuthAction
                                  ,ListingListAction: ListingListAction
                                  ,ListingEntityAction: ListingEntityAction
+                                 ,MyListingsAction: MyListingsAction
+                                 ,ParticipatedListingsAction: ParticipatedListingsAction
                                  ,RouterAction: RouterAction
                                  ,LogoutAction: LogoutAction
                                  ,initialModel: initialModel

@@ -56,6 +56,20 @@ getListing id action =
     |> Task.map action
     |> Effects.task
 
+getCreatorListings: String -> (Maybe (List Listing) -> a) -> Effects a
+getCreatorListings id action =
+    Http.get listingsDecoder (baseListingUrl ++ "/created/" ++ id)
+      |> Task.toMaybe
+      |> Task.map action
+      |> Effects.task
+
+getParticipatedListings: String -> (Maybe (List Listing) -> a) -> Effects a
+getParticipatedListings id action =
+    Http.get listingsDecoder (baseListingUrl ++ "/participated/" ++ id)
+      |> Task.toMaybe
+      |> Task.map action
+      |> Effects.task
+
 createListing: ListingRequest a -> (Maybe Listing -> b) -> Effects.Effects b
 createListing listing action =
   Http.send Http.defaultSettings {
