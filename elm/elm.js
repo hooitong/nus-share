@@ -13015,7 +13015,7 @@ Elm.ServerEndpoints.make = function (_elm) {
                                   ,{ctor: "_Tuple2",_0: "password",_1: $Json$Encode.string(a.password)}
                                   ,{ctor: "_Tuple2",_0: "contact",_1: $Json$Encode.string(a.contact)}])));
    };
-   var baseUserUrl = "http://devserver.com:4000/api/users";
+   var baseUserUrl = "http://localhost:4000/api/users";
    var User = F4(function (a,b,c,d) {    return {id: a,name: b,email: c,contact: d};});
    var userDecoder = A2($Json$Decode$Extra.apply,
    A2($Json$Decode$Extra.apply,
@@ -13062,7 +13062,7 @@ Elm.ServerEndpoints.make = function (_elm) {
                                   ,{ctor: "_Tuple2",_0: "limit",_1: $Json$Encode.$int(a.limit)}
                                   ,{ctor: "_Tuple2",_0: "closed",_1: $Json$Encode.bool(a.closed)}])));
    };
-   var baseListingUrl = "http://devserver.com:4000/api/listings";
+   var baseListingUrl = "http://localhost:4000/api/listings";
    var closeListing = F2(function (id,action) {
       return $Effects.task(A2($Task.map,
       action,
@@ -13760,10 +13760,10 @@ Elm.ListingList.make = function (_elm) {
       _U.list([]),
       _U.list([A2($Html.td,
               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
-              _U.list([$Html.text(listing.title)]))
+              _U.list([$Html.text(listing.lType)]))
               ,A2($Html.td,
               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
-              _U.list([$Html.text(listing.creator.name)]))
+              _U.list([$Html.text(listing.title)]))
               ,A2($Html.td,
               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
               _U.list([$Html.text(listing.venue)]))
@@ -13810,12 +13810,12 @@ Elm.ListingList.make = function (_elm) {
                       _U.list([]),
                       _U.list([A2($Html.tr,
                       _U.list([]),
-                      _U.list([A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Title")]))
-                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Creator")]))
+                      _U.list([A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-1")]),_U.list([$Html.text("Type")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Title")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Venue")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Start Date")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("End Date")]))
-                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([]))]))]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-3")]),_U.list([]))]))]))
                       ,A2($Html.tbody,_U.list([]),A2($List.map,A2(listingRow,address,userId),model.listings))]))]));
    });
    var HandleListingsRetrieved = function (a) {    return {ctor: "HandleListingsRetrieved",_0: a};};
@@ -13875,10 +13875,10 @@ Elm.MyListings.make = function (_elm) {
       _U.list([]),
       _U.list([A2($Html.td,
               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
-              _U.list([$Html.text(listing.title)]))
+              _U.list([$Html.text(listing.lType)]))
               ,A2($Html.td,
               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
-              _U.list([$Html.text(listing.creator.name)]))
+              _U.list([$Html.text(listing.title)]))
               ,A2($Html.td,
               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
               _U.list([$Html.text(listing.venue)]))
@@ -13910,12 +13910,12 @@ Elm.MyListings.make = function (_elm) {
                       _U.list([]),
                       _U.list([A2($Html.tr,
                       _U.list([]),
-                      _U.list([A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Title")]))
-                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Creator")]))
+                      _U.list([A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-1")]),_U.list([$Html.text("Type")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Title")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Venue")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Start Date")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("End Date")]))
-                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([]))]))]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-3")]),_U.list([]))]))]))
                       ,A2($Html.tbody,_U.list([]),A2($List.map,A2(listingRow,address,userId),model.listings))]))]));
    });
    var HandleListingsRetrieved = function (a) {    return {ctor: "HandleListingsRetrieved",_0: a};};
@@ -13965,10 +13965,10 @@ Elm.ParticipatedListings.make = function (_elm) {
       _U.list([]),
       _U.list([A2($Html.td,
               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
-              _U.list([$Html.text(listing.title)]))
+              _U.list([$Html.text(listing.lType)]))
               ,A2($Html.td,
               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
-              _U.list([$Html.text(listing.creator.name)]))
+              _U.list([$Html.text(listing.title)]))
               ,A2($Html.td,
               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
               _U.list([$Html.text(listing.venue)]))
@@ -13996,12 +13996,12 @@ Elm.ParticipatedListings.make = function (_elm) {
                       _U.list([]),
                       _U.list([A2($Html.tr,
                       _U.list([]),
-                      _U.list([A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Title")]))
-                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Creator")]))
+                      _U.list([A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-1")]),_U.list([$Html.text("Type")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Title")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Venue")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Start Date")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("End Date")]))
-                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([]))]))]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-3")]),_U.list([]))]))]))
                       ,A2($Html.tbody,_U.list([]),A2($List.map,A2(listingRow,address,userId),model.listings))]))]));
    });
    var HandleListingsRetrieved = function (a) {    return {ctor: "HandleListingsRetrieved",_0: a};};

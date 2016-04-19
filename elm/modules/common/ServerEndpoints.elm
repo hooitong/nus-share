@@ -40,7 +40,7 @@ type alias Listing = {
 
 -- HTTP Requests
 baseListingUrl: String
-baseListingUrl = "http://devserver.com:4000/api/listings"
+baseListingUrl = "http://localhost:4000/api/listings"
 
 getListings : (Maybe (List Listing) -> a) -> Effects a
 getListings action =
@@ -177,7 +177,7 @@ type alias User = {
 
 -- HTTP Requests
 baseUserUrl: String
-baseUserUrl = "http://devserver.com:4000/api/users"
+baseUserUrl = "http://localhost:4000/api/users"
 
 getUser: String -> (Maybe User -> a) -> Effects.Effects a
 getUser id action =

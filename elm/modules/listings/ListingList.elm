@@ -49,8 +49,8 @@ update action model userId =
 listingRow : Signal.Address Action -> Maybe(String) -> Listing -> Html
 listingRow address userId listing =
   tr [] [
+    td [style [("vertical-align", "middle")]] [text listing.lType],
     td [style [("vertical-align", "middle")]] [text listing.title],
-    td [style [("vertical-align", "middle")]] [text listing.creator.name],
     td [style [("vertical-align", "middle")]] [text listing.venue],
     td [style [("vertical-align", "middle")]] [text (format "%d %b %Y %I:%M%p" (fromString listing.startDate |> Result.withDefault (Date.fromTime 0)))],
     td [style [("vertical-align", "middle")]] [text (format "%d %b %Y %I:%M%p" (fromString listing.endDate |> Result.withDefault (Date.fromTime 0)))],
@@ -72,12 +72,12 @@ view address model userId =
       table [class "table table-striped"] [
           thead [] [
             tr [] [
+              th [class "col-sm-1"] [text "Type"],
               th [class "col-sm-2"] [text "Title"],
-              th [class "col-sm-2"] [text "Creator"],
               th [class "col-sm-2"] [text "Venue"],
               th [class "col-sm-2"] [text "Start Date"],
               th [class "col-sm-2"] [text "End Date"],
-              th [class "col-sm-2"] []
+              th [class "col-sm-3"] []
           ]
         ],
         tbody [] (List.map (listingRow address userId) model.listings)
