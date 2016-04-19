@@ -8,6 +8,7 @@ import ServerEndpoints
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick, on, targetValue)
 import Task exposing (..)
 import Effects exposing (Effects, Never)
 import Signal exposing (message)
@@ -30,6 +31,7 @@ type Action =
   | ListingListAction ListingList.Action
   | ListingEntityAction ListingEntity.Action
   | RouterAction (TransitRouter.Action Routes.Route)
+  | LogoutAction
 
 initialModel : Model
 initialModel = {
@@ -102,6 +104,8 @@ update action model =
     RouterAction routeAction ->
       TransitRouter.update routerConfig routeAction model
 
+    LogoutAction ->
+      ({model | userAuthModel = UserAuth.init, userId = Nothing}, Effects.none)
 
 -- Main view/layout functions
 menu : Signal.Address Action -> Model -> Html
@@ -114,19 +118,24 @@ menu address model =
           ]
         ],
         ul [class "nav navbar-nav"] [
-          li [] [a (linkAttrs ListingListPage) [ text "Listings" ]]
+          li [] [a (linkAttrs ListingListPage) [ text "My Listings" ]]
         ],
-        ul [class "nav navbar-nav navbar-right"] [
-          li [] [a (linkAttrs UserAuthPage) [text <| navAuthTitle model.userAuthModel.name]]
+        div [class "navbar-right"] [
+          ul [class "nav navbar-nav"] [
+            li [] [a (linkAttrs UserAuthPage) [text <| navAuthTitle model.userAuthModel]]
+          ],
+          ul [class "nav navbar-nav", hidden <| (model.userId == Nothing)] [
+            li [] [button [class "btn btn-info navbar-btn", type' "button", onClick address LogoutAction] [text "Logout"]]
+          ]
         ]
     ]
   ]
 
-navAuthTitle : String -> String
-navAuthTitle name =
-  case name of
-    "" -> "Login / Register"
-    _ -> "Welcome, " ++ name
+navAuthTitle : UserAuth.Model -> String
+navAuthTitle user =
+  case user.id of
+    Just _ -> "Welcome, " ++ user.name
+    Nothing -> "Login / Register"
 
 
 contentView : Signal.Address Action -> Model -> Html
@@ -136,13 +145,13 @@ contentView address model =
       UserAuth.view (Signal.forwardTo address UserAuthAction) model.userAuthModel
 
     ListingListPage ->
-      ListingList.view (Signal.forwardTo address ListingListAction) model.listingListModel
+      ListingList.view (Signal.forwardTo address ListingListAction) model.listingListModel model.userId
 
     ListingEntityPage i ->
-      ListingEntity.view (Signal.forwardTo address ListingEntityAction) model.listingEntityModel
+      ListingEntity.view (Signal.forwardTo address ListingEntityAction) model.listingEntityModel model.userId
 
     NewListingPage  ->
-      ListingEntity.view (Signal.forwardTo address ListingEntityAction) model.listingEntityModel
+      ListingEntity.view (Signal.forwardTo address ListingEntityAction) model.listingEntityModel model.userId
 
     EmptyRoute ->
       text "Empty Route"

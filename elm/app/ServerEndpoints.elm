@@ -213,6 +213,7 @@ encodeUser a =
   JsonE.encode 0 <| JsonE.object [
     ("name", JsonE.string a.name),
     ("email", JsonE.string a.email),
+    ("password", JsonE.string a.password),
     ("contact", JsonE.string a.contact)
   ]
 

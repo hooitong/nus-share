@@ -74,7 +74,7 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   div [] [
     div [class "col-sm-6"] [
-      h1 [] [text "Login"],
+      h3 [] [text "Login"],
       Html.form [class "form-horizontal"] [
         div [class "form-group"] [
           label [class "col-sm-3 control-label"] [text "Email"],
@@ -110,7 +110,7 @@ view address model =
       ]
     ],
     div [class "col-sm-6"] [
-      h1 [] [text "Registration"],
+      h3 [] [text "Registration"],
       Html.form [class "form-horizontal"] [
         div [class "form-group"] [
           label [class "col-sm-3 control-label"] [text "Email"],

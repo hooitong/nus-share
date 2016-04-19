@@ -12663,6 +12663,105 @@ Elm.StartApp.make = function (_elm) {
    var Config = F4(function (a,b,c,d) {    return {init: a,update: b,view: c,inputs: d};});
    return _elm.StartApp.values = {_op: _op,start: start,Config: Config,App: App};
 };
+Elm.Date = Elm.Date || {};
+Elm.Date.Format = Elm.Date.Format || {};
+Elm.Date.Format.make = function (_elm) {
+   "use strict";
+   _elm.Date = _elm.Date || {};
+   _elm.Date.Format = _elm.Date.Format || {};
+   if (_elm.Date.Format.values) return _elm.Date.Format.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Date = Elm.Date.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Regex = Elm.Regex.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm);
+   var _op = {};
+   var padWith = function (c) {    return function (_p0) {    return A3($String.padLeft,2,c,$Basics.toString(_p0));};};
+   var zero2twelve = function (n) {    return _U.eq(n,0) ? 12 : n;};
+   var mod12 = function (h) {    return A2($Basics._op["%"],h,12);};
+   var fullDayOfWeek = function (dow) {
+      var _p1 = dow;
+      switch (_p1.ctor)
+      {case "Mon": return "Monday";
+         case "Tue": return "Tuesday";
+         case "Wed": return "Wednesday";
+         case "Thu": return "Thursday";
+         case "Fri": return "Friday";
+         case "Sat": return "Saturday";
+         default: return "Sunday";}
+   };
+   var monthToFullName = function (m) {
+      var _p2 = m;
+      switch (_p2.ctor)
+      {case "Jan": return "January";
+         case "Feb": return "February";
+         case "Mar": return "March";
+         case "Apr": return "April";
+         case "May": return "May";
+         case "Jun": return "June";
+         case "Jul": return "July";
+         case "Aug": return "August";
+         case "Sep": return "September";
+         case "Oct": return "October";
+         case "Nov": return "November";
+         default: return "December";}
+   };
+   var monthToInt = function (m) {
+      var _p3 = m;
+      switch (_p3.ctor)
+      {case "Jan": return 1;
+         case "Feb": return 2;
+         case "Mar": return 3;
+         case "Apr": return 4;
+         case "May": return 5;
+         case "Jun": return 6;
+         case "Jul": return 7;
+         case "Aug": return 8;
+         case "Sep": return 9;
+         case "Oct": return 10;
+         case "Nov": return 11;
+         default: return 12;}
+   };
+   var formatToken = F2(function (d,m) {
+      var symbol = function () {
+         var _p4 = m.submatches;
+         if (_p4.ctor === "::" && _p4._0.ctor === "Just" && _p4._1.ctor === "[]") {
+               return _p4._0._0;
+            } else {
+               return " ";
+            }
+      }();
+      var _p5 = symbol;
+      switch (_p5)
+      {case "%": return "%";
+         case "Y": return $Basics.toString($Date.year(d));
+         case "m": return A3($String.padLeft,2,_U.chr("0"),$Basics.toString(monthToInt($Date.month(d))));
+         case "B": return monthToFullName($Date.month(d));
+         case "b": return $Basics.toString($Date.month(d));
+         case "d": return A2(padWith,_U.chr("0"),$Date.day(d));
+         case "e": return A2(padWith,_U.chr(" "),$Date.day(d));
+         case "a": return $Basics.toString($Date.dayOfWeek(d));
+         case "A": return fullDayOfWeek($Date.dayOfWeek(d));
+         case "H": return A2(padWith,_U.chr("0"),$Date.hour(d));
+         case "k": return A2(padWith,_U.chr(" "),$Date.hour(d));
+         case "I": return A2(padWith,_U.chr("0"),zero2twelve(mod12($Date.hour(d))));
+         case "l": return A2(padWith,_U.chr(" "),zero2twelve(mod12($Date.hour(d))));
+         case "p": return _U.cmp($Date.hour(d),13) < 0 ? "AM" : "PM";
+         case "P": return _U.cmp($Date.hour(d),13) < 0 ? "am" : "pm";
+         case "M": return A2(padWith,_U.chr("0"),$Date.minute(d));
+         case "S": return A2(padWith,_U.chr("0"),$Date.second(d));
+         default: return "";}
+   });
+   var re = $Regex.regex("%(%|Y|m|B|b|d|e|a|A|H|k|I|l|p|P|M|S)");
+   var format = F2(function (s,d) {    return A4($Regex.replace,$Regex.All,re,formatToken(d),s);});
+   var formatISO8601 = format("%Y-%m-%dT%H:%M:%SZ");
+   return _elm.Date.Format.values = {_op: _op,format: format,formatISO8601: formatISO8601};
+};
 Elm.BitList = Elm.BitList || {};
 Elm.BitList.make = function (_elm) {
    "use strict";
@@ -12913,6 +13012,7 @@ Elm.ServerEndpoints.make = function (_elm) {
       0,
       $Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "name",_1: $Json$Encode.string(a.name)}
                                   ,{ctor: "_Tuple2",_0: "email",_1: $Json$Encode.string(a.email)}
+                                  ,{ctor: "_Tuple2",_0: "password",_1: $Json$Encode.string(a.password)}
                                   ,{ctor: "_Tuple2",_0: "contact",_1: $Json$Encode.string(a.contact)}])));
    };
    var baseUserUrl = "http://devserver.com:4000/api/users";
@@ -13165,7 +13265,7 @@ Elm.ListingEntity.make = function (_elm) {
    var HandleSaved = function (a) {    return {ctor: "HandleSaved",_0: a};};
    var SaveListing = {ctor: "SaveListing"};
    var SetListingTitle = function (a) {    return {ctor: "SetListingTitle",_0: a};};
-   var view = F2(function (address,model) {
+   var view = F3(function (address,model,userId) {
       return A2($Html.div,
       _U.list([]),
       _U.list([A2($Html.h1,_U.list([]),_U.list([$Html.text(pageTitle(A2($Debug.log,"model",model)))]))
@@ -13270,6 +13370,8 @@ Elm.ListingList.make = function (_elm) {
    if (_elm.ListingList.values) return _elm.ListingList.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
+   $Date = Elm.Date.make(_elm),
+   $Date$Format = Elm.Date.Format.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $Effects = Elm.Effects.make(_elm),
    $Html = Elm.Html.make(_elm),
@@ -13283,9 +13385,23 @@ Elm.ListingList.make = function (_elm) {
    $ServerEndpoints = Elm.ServerEndpoints.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
+   var isUserPresent = F2(function (user,_p0) {
+      var _p1 = _p0;
+      var _p3 = _p1._1;
+      var _p2 = _p1._0;
+      return _U.eq(_p2,false) ? {ctor: "_Tuple2",_0: _U.eq(user.id,_p3),_1: _p3} : {ctor: "_Tuple2",_0: _p2,_1: _p3};
+   });
+   var checkHelped = F2(function (listing,userId) {
+      var _p4 = userId;
+      if (_p4.ctor === "Just") {
+            return $Basics.fst(A3($List.foldl,isUserPresent,{ctor: "_Tuple2",_0: false,_1: _p4._0},listing.users)) ? "disabled" : "";
+         } else {
+            return "disabled";
+         }
+   });
    var HandleListingClosed = function (a) {    return {ctor: "HandleListingClosed",_0: a};};
    var RegisterUser = function (a) {    return {ctor: "RegisterUser",_0: a};};
-   var listingRow = F2(function (address,listing) {
+   var listingRow = F3(function (address,userId,listing) {
       return A2($Html.tr,
       _U.list([]),
       _U.list([A2($Html.td,
@@ -13299,54 +13415,56 @@ Elm.ListingList.make = function (_elm) {
               _U.list([$Html.text(listing.venue)]))
               ,A2($Html.td,
               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
-              _U.list([$Html.text(listing.startDate)]))
+              _U.list([$Html.text(A2($Date$Format.format,"%d %b %Y %I:%M%p",A2($Result.withDefault,$Date.fromTime(0),$Date.fromString(listing.startDate))))]))
               ,A2($Html.td,
               _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
-              _U.list([$Html.text(listing.endDate)]))
+              _U.list([$Html.text(A2($Date$Format.format,"%d %b %Y %I:%M%p",A2($Result.withDefault,$Date.fromTime(0),$Date.fromString(listing.endDate))))]))
               ,A2($Html.td,
               _U.list([]),
+              _U.list([A2($Html.div,
+              _U.list([$Html$Attributes.$class("btn-group")]),
               _U.list([A2($Html.button,
-              _U.list([$Html$Attributes.$class("btn btn-default"),$Routes.clickAttr($Routes.ListingEntityPage(listing.id))]),
-              _U.list([$Html.text("View")]))]))
-              ,A2($Html.td,
-              _U.list([]),
-              _U.list([A2($Html.button,
-              _U.list([$Html$Attributes.$class("btn btn-primary"),A2($Html$Events.onClick,address,RegisterUser(listing.id))]),
-              _U.list([$Html.text("Help")]))]))]));
+                      _U.list([$Html$Attributes.$class("btn btn-default"),$Routes.clickAttr($Routes.ListingEntityPage(listing.id))]),
+                      _U.list([$Html.text("View")]))
+                      ,A2($Html.button,
+                      _U.list([$Html$Attributes.$class(A2($Basics._op["++"],"btn btn-primary ",A2(checkHelped,listing,userId)))
+                              ,A2($Html$Events.onClick,address,RegisterUser(listing.id))]),
+                      _U.list([$Html.text("Help")]))]))]))]));
    });
-   var view = F2(function (address,model) {
+   var view = F3(function (address,model,userId) {
       return A2($Html.div,
       _U.list([]),
-      _U.list([A2($Html.h2,_U.list([]),_U.list([$Html.text("Available Listings")]))
-              ,A2($Html.button,
-              _U.list([$Html$Attributes.$class("pull-right btn btn-default"),$Routes.clickAttr($Routes.NewListingPage)]),
-              _U.list([$Html.text("New Listing")]))
+      _U.list([A2($Html.h2,
+              _U.list([]),
+              _U.list([$Html.text("Available Listings")
+                      ,A2($Html.button,
+                      _U.list([$Html$Attributes.$class("pull-right btn btn-default"),$Routes.clickAttr($Routes.NewListingPage)]),
+                      _U.list([$Html.text("New Listing")]))]))
               ,A2($Html.table,
               _U.list([$Html$Attributes.$class("table table-striped")]),
               _U.list([A2($Html.thead,
                       _U.list([]),
                       _U.list([A2($Html.tr,
                       _U.list([]),
-                      _U.list([A2($Html.th,_U.list([]),_U.list([$Html.text("Title")]))
-                              ,A2($Html.th,_U.list([]),_U.list([$Html.text("Creator")]))
-                              ,A2($Html.th,_U.list([]),_U.list([$Html.text("Venue")]))
-                              ,A2($Html.th,_U.list([]),_U.list([$Html.text("Start Date")]))
-                              ,A2($Html.th,_U.list([]),_U.list([$Html.text("End Date")]))
-                              ,A2($Html.th,_U.list([]),_U.list([]))
-                              ,A2($Html.th,_U.list([]),_U.list([]))]))]))
-                      ,A2($Html.tbody,_U.list([]),A2($List.map,listingRow(address),model.listings))]))]));
+                      _U.list([A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-3")]),_U.list([$Html.text("Title")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Creator")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Venue")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Start Date")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("End Date")]))
+                              ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-1")]),_U.list([]))]))]))
+                      ,A2($Html.tbody,_U.list([]),A2($List.map,A2(listingRow,address,userId),model.listings))]))]));
    });
    var CloseListing = function (a) {    return {ctor: "CloseListing",_0: a};};
    var HandleListingsRetrieved = function (a) {    return {ctor: "HandleListingsRetrieved",_0: a};};
    var update = F3(function (action,model,userId) {
-      var _p0 = action;
-      switch (_p0.ctor)
+      var _p5 = action;
+      switch (_p5.ctor)
       {case "Show": return {ctor: "_Tuple2",_0: model,_1: $ServerEndpoints.getListings(HandleListingsRetrieved)};
-         case "HandleListingsRetrieved": return {ctor: "_Tuple2",_0: _U.update(model,{listings: A2($Maybe.withDefault,_U.list([]),_p0._0)}),_1: $Effects.none};
-         case "CloseListing": return {ctor: "_Tuple2",_0: model,_1: A2($ServerEndpoints.closeListing,_p0._0,HandleListingClosed)};
-         case "RegisterUser": var _p1 = A2($Debug.log,"test111",userId);
-           if (_p1.ctor === "Just") {
-                 return {ctor: "_Tuple2",_0: model,_1: A3($ServerEndpoints.registerUser,_p0._0,A2($Debug.log,"test22",_p1._0),HandleListingClosed)};
+         case "HandleListingsRetrieved": return {ctor: "_Tuple2",_0: _U.update(model,{listings: A2($Maybe.withDefault,_U.list([]),_p5._0)}),_1: $Effects.none};
+         case "CloseListing": return {ctor: "_Tuple2",_0: model,_1: A2($ServerEndpoints.closeListing,_p5._0,HandleListingClosed)};
+         case "RegisterUser": var _p6 = A2($Debug.log,"test111",userId);
+           if (_p6.ctor === "Just") {
+                 return {ctor: "_Tuple2",_0: model,_1: A3($ServerEndpoints.registerUser,_p5._0,A2($Debug.log,"test22",_p6._0),HandleListingClosed)};
               } else {
                  return {ctor: "_Tuple2",_0: model,_1: $ServerEndpoints.getListings(HandleListingsRetrieved)};
               }
@@ -13397,7 +13515,7 @@ Elm.UserAuth.make = function (_elm) {
       _U.list([]),
       _U.list([A2($Html.div,
               _U.list([$Html$Attributes.$class("col-sm-6")]),
-              _U.list([A2($Html.h1,_U.list([]),_U.list([$Html.text("Login")]))
+              _U.list([A2($Html.h3,_U.list([]),_U.list([$Html.text("Login")]))
                       ,A2($Html.form,
                       _U.list([$Html$Attributes.$class("form-horizontal")]),
                       _U.list([A2($Html.div,
@@ -13443,7 +13561,7 @@ Elm.UserAuth.make = function (_elm) {
                               _U.list([$Html.text("Sign In")]))]))]))]))]))
               ,A2($Html.div,
               _U.list([$Html$Attributes.$class("col-sm-6")]),
-              _U.list([A2($Html.h1,_U.list([]),_U.list([$Html.text("Registration")]))
+              _U.list([A2($Html.h3,_U.list([]),_U.list([$Html.text("Registration")]))
                       ,A2($Html.form,
                       _U.list([$Html$Attributes.$class("form-horizontal")]),
                       _U.list([A2($Html.div,
@@ -13583,6 +13701,7 @@ Elm.ShareApp.make = function (_elm) {
    $Effects = Elm.Effects.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $Html$Events = Elm.Html.Events.make(_elm),
    $List = Elm.List.make(_elm),
    $ListingEntity = Elm.ListingEntity.make(_elm),
    $ListingList = Elm.ListingList.make(_elm),
@@ -13602,14 +13721,20 @@ Elm.ShareApp.make = function (_elm) {
    function (v) {
       return typeof v === "string" || typeof v === "object" && v instanceof String ? v : _U.badPort("a string",v);
    });
-   var navAuthTitle = function (name) {
-      var _p0 = name;
-      if (_p0 === "") {
-            return "Login / Register";
+   var navAuthTitle = function (user) {
+      var _p0 = user.id;
+      if (_p0.ctor === "Just") {
+            return A2($Basics._op["++"],"Welcome, ",user.name);
          } else {
-            return A2($Basics._op["++"],"Welcome, ",name);
+            return "Login / Register";
          }
    };
+   var initialModel = {transitRouter: $TransitRouter.empty($Routes.EmptyRoute)
+                      ,userAuthModel: $UserAuth.init
+                      ,listingListModel: $ListingList.init
+                      ,listingEntityModel: $ListingEntity.init
+                      ,userId: $Maybe.Nothing};
+   var LogoutAction = {ctor: "LogoutAction"};
    var menu = F2(function (address,model) {
       return A2($Html.header,
       _U.list([$Html$Attributes.$class("navbar navbar-default")]),
@@ -13622,18 +13747,24 @@ Elm.ShareApp.make = function (_elm) {
               _U.list([A2($Html.a,$Routes.linkAttrs($Routes.ListingListPage),_U.list([$Html.text("NUSShare")]))]))]))
               ,A2($Html.ul,
               _U.list([$Html$Attributes.$class("nav navbar-nav")]),
-              _U.list([A2($Html.li,_U.list([]),_U.list([A2($Html.a,$Routes.linkAttrs($Routes.ListingListPage),_U.list([$Html.text("Listings")]))]))]))
-              ,A2($Html.ul,
-              _U.list([$Html$Attributes.$class("nav navbar-nav navbar-right")]),
-              _U.list([A2($Html.li,
-              _U.list([]),
-              _U.list([A2($Html.a,$Routes.linkAttrs($Routes.UserAuthPage),_U.list([$Html.text(navAuthTitle(model.userAuthModel.name))]))]))]))]))]));
+              _U.list([A2($Html.li,_U.list([]),_U.list([A2($Html.a,$Routes.linkAttrs($Routes.ListingListPage),_U.list([$Html.text("My Listings")]))]))]))
+              ,A2($Html.div,
+              _U.list([$Html$Attributes.$class("navbar-right")]),
+              _U.list([A2($Html.ul,
+                      _U.list([$Html$Attributes.$class("nav navbar-nav")]),
+                      _U.list([A2($Html.li,
+                      _U.list([]),
+                      _U.list([A2($Html.a,$Routes.linkAttrs($Routes.UserAuthPage),_U.list([$Html.text(navAuthTitle(model.userAuthModel))]))]))]))
+                      ,A2($Html.ul,
+                      _U.list([$Html$Attributes.$class("nav navbar-nav"),$Html$Attributes.hidden(_U.eq(model.userId,$Maybe.Nothing))]),
+                      _U.list([A2($Html.li,
+                      _U.list([]),
+                      _U.list([A2($Html.button,
+                      _U.list([$Html$Attributes.$class("btn btn-info navbar-btn")
+                              ,$Html$Attributes.type$("button")
+                              ,A2($Html$Events.onClick,address,LogoutAction)]),
+                      _U.list([$Html.text("Logout")]))]))]))]))]))]));
    });
-   var initialModel = {transitRouter: $TransitRouter.empty($Routes.EmptyRoute)
-                      ,userAuthModel: $UserAuth.init
-                      ,listingListModel: $ListingList.init
-                      ,listingEntityModel: $ListingEntity.init
-                      ,userId: $Maybe.Nothing};
    var RouterAction = function (a) {    return {ctor: "RouterAction",_0: a};};
    var actions = A2($Signal.map,RouterAction,$TransitRouter.actions);
    var ListingEntityAction = function (a) {    return {ctor: "ListingEntityAction",_0: a};};
@@ -13675,15 +13806,16 @@ Elm.ShareApp.make = function (_elm) {
            var model$ = _p8._0;
            var effects = _p8._1;
            return {ctor: "_Tuple2",_0: _U.update(model,{listingEntityModel: model$}),_1: A2($Effects.map,ListingEntityAction,effects)};
-         default: return A3($TransitRouter.update,routerConfig,_p5._0,model);}
+         case "RouterAction": return A3($TransitRouter.update,routerConfig,_p5._0,model);
+         default: return {ctor: "_Tuple2",_0: _U.update(model,{userAuthModel: $UserAuth.init,userId: $Maybe.Nothing}),_1: $Effects.none};}
    });
    var contentView = F2(function (address,model) {
       var _p9 = $TransitRouter.getRoute(model);
       switch (_p9.ctor)
       {case "UserAuthPage": return A2($UserAuth.view,A2($Signal.forwardTo,address,UserAuthAction),model.userAuthModel);
-         case "ListingListPage": return A2($ListingList.view,A2($Signal.forwardTo,address,ListingListAction),model.listingListModel);
-         case "ListingEntityPage": return A2($ListingEntity.view,A2($Signal.forwardTo,address,ListingEntityAction),model.listingEntityModel);
-         case "NewListingPage": return A2($ListingEntity.view,A2($Signal.forwardTo,address,ListingEntityAction),model.listingEntityModel);
+         case "ListingListPage": return A3($ListingList.view,A2($Signal.forwardTo,address,ListingListAction),model.listingListModel,model.userId);
+         case "ListingEntityPage": return A3($ListingEntity.view,A2($Signal.forwardTo,address,ListingEntityAction),model.listingEntityModel,model.userId);
+         case "NewListingPage": return A3($ListingEntity.view,A2($Signal.forwardTo,address,ListingEntityAction),model.listingEntityModel,model.userId);
          default: return $Html.text("Empty Route");}
    });
    var view = F2(function (address,model) {
@@ -13704,6 +13836,7 @@ Elm.ShareApp.make = function (_elm) {
                                  ,ListingListAction: ListingListAction
                                  ,ListingEntityAction: ListingEntityAction
                                  ,RouterAction: RouterAction
+                                 ,LogoutAction: LogoutAction
                                  ,initialModel: initialModel
                                  ,actions: actions
                                  ,mountRoute: mountRoute

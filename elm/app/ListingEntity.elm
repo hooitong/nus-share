@@ -85,8 +85,8 @@ pageTitle model =
     Nothing -> "New Listing"
 
 
-view : Signal.Address Action -> Model -> Html
-view address model =
+view : Signal.Address Action -> Model -> Maybe(String) -> Html
+view address model userId =
   div [] [
       h1 [] [text <| pageTitle (log "model" model)]
     , Html.form [class "form-horizontal"] [
