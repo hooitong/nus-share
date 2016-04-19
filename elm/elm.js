@@ -12663,6 +12663,225 @@ Elm.StartApp.make = function (_elm) {
    var Config = F4(function (a,b,c,d) {    return {init: a,update: b,view: c,inputs: d};});
    return _elm.StartApp.values = {_op: _op,start: start,Config: Config,App: App};
 };
+Elm.BitList = Elm.BitList || {};
+Elm.BitList.make = function (_elm) {
+   "use strict";
+   _elm.BitList = _elm.BitList || {};
+   if (_elm.BitList.values) return _elm.BitList.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var partition = F2(function (size,list) {
+      return _U.cmp($List.length(list),size) < 1 ? _U.list([list]) : A2($List._op["::"],A2($List.take,size,list),A2(partition,size,A2($List.drop,size,list)));
+   });
+   var toByteReverse = function (bitList) {
+      var _p0 = bitList;
+      if (_p0.ctor === "[]") {
+            return 0;
+         } else {
+            if (_p0._0.ctor === "Off") {
+                  return 2 * toByteReverse(_p0._1);
+               } else {
+                  return 1 + 2 * toByteReverse(_p0._1);
+               }
+         }
+   };
+   var toByte = function (bitList) {    return toByteReverse($List.reverse(bitList));};
+   var Off = {ctor: "Off"};
+   var On = {ctor: "On"};
+   var fromNumber = function ($int) {
+      return _U.eq($int,0) ? _U.list([]) : _U.eq(A2($Basics._op["%"],$int,2),1) ? A2($List.append,fromNumber($int / 2 | 0),_U.list([On])) : A2($List.append,
+      fromNumber($int / 2 | 0),
+      _U.list([Off]));
+   };
+   var fromNumberWithSize = F2(function (number,size) {
+      var bitList = fromNumber(number);
+      var paddingSize = size - $List.length(bitList);
+      return A2($List.append,A2($List.repeat,paddingSize,Off),bitList);
+   });
+   var fromByte = function ($byte) {    return A2(fromNumberWithSize,$byte,8);};
+   return _elm.BitList.values = {_op: _op
+                                ,On: On
+                                ,Off: Off
+                                ,fromNumber: fromNumber
+                                ,fromNumberWithSize: fromNumberWithSize
+                                ,fromByte: fromByte
+                                ,toByte: toByte
+                                ,toByteReverse: toByteReverse
+                                ,partition: partition};
+};
+Elm.Base64 = Elm.Base64 || {};
+Elm.Base64.make = function (_elm) {
+   "use strict";
+   _elm.Base64 = _elm.Base64 || {};
+   if (_elm.Base64.values) return _elm.Base64.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Array = Elm.Array.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $BitList = Elm.BitList.make(_elm),
+   $Char = Elm.Char.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm);
+   var _op = {};
+   var dropLast = F2(function (number,list) {    return $List.reverse(A2($List.drop,number,$List.reverse(list)));});
+   var partitionBits = function (list) {
+      var list$ = A3($List.foldr,$List.append,_U.list([]),A2($List.map,$BitList.fromByte,list));
+      return A2($List.map,$BitList.toByte,A2($BitList.partition,6,list$));
+   };
+   var base64CharsList = $String.toList("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
+   var base64Map = function () {
+      var insert = F2(function (_p0,dict) {    var _p1 = _p0;return A3($Dict.insert,_p1._1,_p1._0,dict);});
+      return A3($List.foldl,insert,$Dict.empty,A2($List.indexedMap,F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};}),base64CharsList));
+   }();
+   var isValid = function (string) {
+      var string$ = A2($String.endsWith,"==",string) ? A2($String.dropRight,2,string) : A2($String.endsWith,"=",string) ? A2($String.dropRight,
+      1,
+      string) : string;
+      var isBase64Char = function ($char) {    return A2($Dict.member,$char,base64Map);};
+      return A2($String.all,isBase64Char,string$);
+   };
+   var toBase64BitList = function (string) {
+      var endingEquals = A2($String.endsWith,"==",string) ? 2 : A2($String.endsWith,"=",string) ? 1 : 0;
+      var stripped = $String.toList(A2($String.dropRight,endingEquals,string));
+      var base64ToInt = function ($char) {    var _p2 = A2($Dict.get,$char,base64Map);if (_p2.ctor === "Just") {    return _p2._0;} else {    return -1;}};
+      var numberList = A2($List.map,base64ToInt,stripped);
+      return A2(dropLast,endingEquals * 2,A2($List.concatMap,A2($Basics.flip,$BitList.fromNumberWithSize,6),numberList));
+   };
+   var toCharList = function (bitList) {
+      var array = $Array.fromList(base64CharsList);
+      var toBase64Char = function (index) {    return A2($Maybe.withDefault,_U.chr("!"),A2($Array.get,index,array));};
+      var toChars = function (_p3) {
+         var _p4 = _p3;
+         var _p5 = {ctor: "_Tuple3",_0: _p4._0,_1: _p4._1,_2: _p4._2};
+         if (_p5._2 === -1) {
+               if (_p5._1 === -1) {
+                     return A2($List.append,A2(dropLast,2,A2($List.map,toBase64Char,partitionBits(_U.list([_p5._0,0,0])))),_U.list([_U.chr("="),_U.chr("=")]));
+                  } else {
+                     return A2($List.append,A2(dropLast,1,A2($List.map,toBase64Char,partitionBits(_U.list([_p5._0,_p5._1,0])))),_U.list([_U.chr("=")]));
+                  }
+            } else {
+               return A2($List.map,toBase64Char,partitionBits(_U.list([_p5._0,_p5._1,_p5._2])));
+            }
+      };
+      return A2($List.concatMap,toChars,bitList);
+   };
+   var toTupleList = function (list) {
+      var _p6 = list;
+      if (_p6.ctor === "::") {
+            if (_p6._1.ctor === "::") {
+                  if (_p6._1._1.ctor === "::") {
+                        return A2($List._op["::"],{ctor: "_Tuple3",_0: _p6._0,_1: _p6._1._0,_2: _p6._1._1._0},toTupleList(_p6._1._1._1));
+                     } else {
+                        return _U.list([{ctor: "_Tuple3",_0: _p6._0,_1: _p6._1._0,_2: -1}]);
+                     }
+               } else {
+                  return _U.list([{ctor: "_Tuple3",_0: _p6._0,_1: -1,_2: -1}]);
+               }
+         } else {
+            return _U.list([]);
+         }
+   };
+   var toCodeList = function (string) {    return A2($List.map,$Char.toCode,$String.toList(string));};
+   var decode = function (s) {
+      if ($Basics.not(isValid(s))) return $Result.Err("Error while decoding"); else {
+            var bitList = A2($List.map,$BitList.toByte,A2($BitList.partition,8,toBase64BitList(s)));
+            var charList = A2($List.map,$Char.fromCode,bitList);
+            return $Result.Ok($String.fromList(charList));
+         }
+   };
+   var encode = function (s) {    return $Result.Ok($String.fromList(toCharList(toTupleList(toCodeList(s)))));};
+   return _elm.Base64.values = {_op: _op,encode: encode,decode: decode};
+};
+Elm.Jwt = Elm.Jwt || {};
+Elm.Jwt.make = function (_elm) {
+   "use strict";
+   _elm.Jwt = _elm.Jwt || {};
+   if (_elm.Jwt.values) return _elm.Jwt.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Base64 = Elm.Base64.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Http = Elm.Http.make(_elm),
+   $Json$Decode = Elm.Json.Decode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm),
+   $Task = Elm.Task.make(_elm);
+   var _op = {};
+   var getWithJwt = F3(function (token,dec,url) {
+      return A2($Http.fromJson,
+      dec,
+      A2($Http.send,
+      $Http.defaultSettings,
+      {verb: "GET",headers: _U.list([{ctor: "_Tuple2",_0: "Authorization",_1: A2($Basics._op["++"],"Bearer ",token)}]),url: url,body: $Http.empty}));
+   });
+   var post$ = F3(function (dec,url,body) {
+      return A2($Http.fromJson,
+      dec,
+      A2($Http.send,$Http.defaultSettings,{verb: "POST",headers: _U.list([{ctor: "_Tuple2",_0: "Content-type",_1: "application/json"}]),url: url,body: body}));
+   });
+   var unurl = function () {
+      var fix = function (c) {    var _p0 = c;switch (_p0.valueOf()) {case "-": return _U.chr("+");case "_": return _U.chr("/");default: return _p0;}};
+      return $String.map(fix);
+   }();
+   var TokenDecodeError = function (a) {    return {ctor: "TokenDecodeError",_0: a};};
+   var TokenProcessingError = function (a) {    return {ctor: "TokenProcessingError",_0: a};};
+   var fixlength = function (s) {
+      var _p1 = A2($Basics._op["%"],$String.length(s),4);
+      switch (_p1)
+      {case 0: return $Result.Ok(s);
+         case 2: return $Result.Ok($String.concat(_U.list([s,"=="])));
+         case 3: return $Result.Ok($String.concat(_U.list([s,"="])));
+         default: return $Result.Err(TokenProcessingError("Wrong length"));}
+   };
+   var decodeToken = F2(function (dec,s) {
+      var f1 = function (_p2) {    return fixlength(unurl(_p2));}(s);
+      var f2 = A2($Result.map,$String.split("."),f1);
+      var _p3 = f2;
+      if (_p3.ctor === "Err") {
+            return $Result.Err(_p3._0);
+         } else {
+            if (_p3._0.ctor === "::" && _p3._0._1.ctor === "::" && _p3._0._1._1.ctor === "::" && _p3._0._1._1._1.ctor === "[]") {
+                  var _p4 = $Base64.decode(_p3._0._1._0);
+                  if (_p4.ctor === "Ok") {
+                        var _p5 = A2($Json$Decode.decodeString,dec,_p4._0);
+                        if (_p5.ctor === "Ok") {
+                              return $Result.Ok(_p5._0);
+                           } else {
+                              return $Result.Err(TokenDecodeError(_p5._0));
+                           }
+                     } else {
+                        return $Result.Err(TokenProcessingError(_p4._0));
+                     }
+               } else {
+                  return $Result.Err(TokenProcessingError("Token has invalid shape"));
+               }
+         }
+   });
+   var HttpError = function (a) {    return {ctor: "HttpError",_0: a};};
+   var authenticate = F3(function (packetDecoder,url,body) {
+      return $Task.toResult(A2($Task.mapError,function (s) {    return HttpError($Basics.toString(s));},A3(post$,packetDecoder,url,$Http.string(body))));
+   });
+   return _elm.Jwt.values = {_op: _op
+                            ,authenticate: authenticate
+                            ,decodeToken: decodeToken
+                            ,getWithJwt: getWithJwt
+                            ,HttpError: HttpError
+                            ,TokenProcessingError: TokenProcessingError
+                            ,TokenDecodeError: TokenDecodeError};
+};
 Elm.ServerEndpoints = Elm.ServerEndpoints || {};
 Elm.ServerEndpoints.make = function (_elm) {
    "use strict";
@@ -12682,6 +12901,54 @@ Elm.ServerEndpoints.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm),
    $Task = Elm.Task.make(_elm);
    var _op = {};
+   var userToken = $Maybe.Nothing;
+   var encodeAuth = function (a) {
+      return A2($Json$Encode.encode,
+      0,
+      $Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "email",_1: $Json$Encode.string(a.email)}
+                                  ,{ctor: "_Tuple2",_0: "password",_1: $Json$Encode.string(a.password)}])));
+   };
+   var encodeUser = function (a) {
+      return A2($Json$Encode.encode,
+      0,
+      $Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "name",_1: $Json$Encode.string(a.name)}
+                                  ,{ctor: "_Tuple2",_0: "email",_1: $Json$Encode.string(a.email)}
+                                  ,{ctor: "_Tuple2",_0: "contact",_1: $Json$Encode.string(a.contact)}])));
+   };
+   var baseUserUrl = "http://devserver.com:4000/api/users";
+   var User = F4(function (a,b,c,d) {    return {id: a,name: b,email: c,contact: d};});
+   var userDecoder = A2($Json$Decode$Extra.apply,
+   A2($Json$Decode$Extra.apply,
+   A2($Json$Decode$Extra.apply,
+   A2($Json$Decode.map,User,A2($Json$Decode._op[":="],"id",$Json$Decode.string)),
+   A2($Json$Decode._op[":="],"name",$Json$Decode.string)),
+   A2($Json$Decode._op[":="],"email",$Json$Decode.string)),
+   A2($Json$Decode._op[":="],"contact",$Json$Decode.string));
+   var getUser = F2(function (id,action) {
+      return $Effects.task(A2($Task.map,action,$Task.toMaybe(A2($Http.get,userDecoder,A2($Basics._op["++"],baseUserUrl,A2($Basics._op["++"],"/",id))))));
+   });
+   var createUser = F2(function (user,action) {
+      return $Effects.task(A2($Task.map,
+      action,
+      $Task.toMaybe(A2($Http.fromJson,
+      userDecoder,
+      A2($Http.send,
+      $Http.defaultSettings,
+      {verb: "POST",url: baseUserUrl,body: $Http.string(encodeUser(user)),headers: _U.list([{ctor: "_Tuple2",_0: "Content-Type",_1: "application/json"}])})))));
+   });
+   var authenticate = F2(function (request,action) {
+      return $Effects.task(A2($Task.map,
+      action,
+      $Task.toMaybe(A2($Http.fromJson,
+      userDecoder,
+      A2($Http.send,
+      $Http.defaultSettings,
+      {verb: "POST"
+      ,url: A2($Basics._op["++"],baseUserUrl,"/authenticate")
+      ,body: $Http.string(encodeAuth(request))
+      ,headers: _U.list([{ctor: "_Tuple2",_0: "Content-Type",_1: "application/json"}])})))));
+   });
+   var usersDecoder = $Json$Decode.list(userDecoder);
    var encodeListing = function (a) {
       return A2($Json$Encode.encode,
       0,
@@ -12694,17 +12961,40 @@ Elm.ServerEndpoints.make = function (_elm) {
                                   ,{ctor: "_Tuple2",_0: "limit",_1: $Json$Encode.$int(a.limit)}
                                   ,{ctor: "_Tuple2",_0: "closed",_1: $Json$Encode.bool(a.closed)}])));
    };
-   var baseUrl = "http://devserver.com:8080/api";
+   var baseListingUrl = "http://devserver.com:4000/api/listings";
    var closeListing = F2(function (id,action) {
       return $Effects.task(A2($Task.map,
       action,
       $Task.toMaybe(A2($Http.send,
       $Http.defaultSettings,
-      {verb: "DELETE",url: A2($Basics._op["++"],baseUrl,A2($Basics._op["++"],"/listings",id)),body: $Http.empty,headers: _U.list([])}))));
+      {verb: "DELETE",url: A2($Basics._op["++"],baseListingUrl,A2($Basics._op["++"],"/",id)),body: $Http.empty,headers: _U.list([])}))));
    });
-   var User = F4(function (a,b,c,d) {    return {id: a,name: b,email: c,contact: d};});
-   var Listing = F9(function (a,b,c,d,e,f,g,h,i) {    return {id: a,title: b,lType: c,content: d,venue: e,startDate: f,endDate: g,limit: h,closed: i};});
+   var Listing = function (a) {
+      return function (b) {
+         return function (c) {
+            return function (d) {
+               return function (e) {
+                  return function (f) {
+                     return function (g) {
+                        return function (h) {
+                           return function (i) {
+                              return function (j) {
+                                 return function (k) {
+                                    return {id: a,title: b,lType: c,content: d,venue: e,startDate: f,endDate: g,limit: h,closed: i,creator: j,users: k};
+                                 };
+                              };
+                           };
+                        };
+                     };
+                  };
+               };
+            };
+         };
+      };
+   };
    var listingDecoder = A2($Json$Decode$Extra.apply,
+   A2($Json$Decode$Extra.apply,
+   A2($Json$Decode$Extra.apply,
    A2($Json$Decode$Extra.apply,
    A2($Json$Decode$Extra.apply,
    A2($Json$Decode$Extra.apply,
@@ -12720,11 +13010,11 @@ Elm.ServerEndpoints.make = function (_elm) {
    A2($Json$Decode._op[":="],"startDate",$Json$Decode.string)),
    A2($Json$Decode._op[":="],"endDate",$Json$Decode.string)),
    A2($Json$Decode._op[":="],"limit",$Json$Decode.$int)),
-   A2($Json$Decode._op[":="],"closed",$Json$Decode.bool));
+   A2($Json$Decode._op[":="],"closed",$Json$Decode.bool)),
+   A2($Json$Decode._op[":="],"creator",userDecoder)),
+   A2($Json$Decode._op[":="],"users",usersDecoder));
    var getListing = F2(function (id,action) {
-      return $Effects.task(A2($Task.map,
-      action,
-      $Task.toMaybe(A2($Http.get,listingDecoder,A2($Basics._op["++"],baseUrl,A2($Basics._op["++"],"/listings/",id))))));
+      return $Effects.task(A2($Task.map,action,$Task.toMaybe(A2($Http.get,listingDecoder,A2($Basics._op["++"],baseListingUrl,A2($Basics._op["++"],"/",id))))));
    });
    var createListing = F2(function (listing,action) {
       return $Effects.task(A2($Task.map,
@@ -12734,11 +13024,11 @@ Elm.ServerEndpoints.make = function (_elm) {
       A2($Http.send,
       $Http.defaultSettings,
       {verb: "POST"
-      ,url: A2($Basics._op["++"],baseUrl,"/listings")
+      ,url: baseListingUrl
       ,body: $Http.string(encodeListing(listing))
       ,headers: _U.list([{ctor: "_Tuple2",_0: "Content-Type",_1: "application/json"}])})))));
    });
-   var updateListing = F2(function (listing,action) {
+   var updateListing = F3(function (id,listing,action) {
       return $Effects.task(A2($Task.map,
       action,
       $Task.toMaybe(A2($Http.fromJson,
@@ -12746,18 +13036,15 @@ Elm.ServerEndpoints.make = function (_elm) {
       A2($Http.send,
       $Http.defaultSettings,
       {verb: "PUT"
-      ,url: A2($Basics._op["++"],baseUrl,A2($Basics._op["++"],"/listings/",listing.id))
+      ,url: A2($Basics._op["++"],baseListingUrl,A2($Basics._op["++"],"/",id))
       ,body: $Http.string(encodeListing(listing))
       ,headers: _U.list([{ctor: "_Tuple2",_0: "Content-Type",_1: "application/json"}])})))));
    });
    var listingsDecoder = $Json$Decode.list(listingDecoder);
-   var getListings = function (action) {
-      return $Effects.task(A2($Task.map,action,$Task.toMaybe(A2($Http.get,listingsDecoder,A2($Basics._op["++"],baseUrl,"/listings")))));
-   };
+   var getListings = function (action) {    return $Effects.task(A2($Task.map,action,$Task.toMaybe(A2($Http.get,listingsDecoder,baseListingUrl))));};
    return _elm.ServerEndpoints.values = {_op: _op
                                         ,Listing: Listing
-                                        ,User: User
-                                        ,baseUrl: baseUrl
+                                        ,baseListingUrl: baseListingUrl
                                         ,getListings: getListings
                                         ,getListing: getListing
                                         ,createListing: createListing
@@ -12765,7 +13052,17 @@ Elm.ServerEndpoints.make = function (_elm) {
                                         ,closeListing: closeListing
                                         ,listingDecoder: listingDecoder
                                         ,listingsDecoder: listingsDecoder
-                                        ,encodeListing: encodeListing};
+                                        ,encodeListing: encodeListing
+                                        ,User: User
+                                        ,baseUserUrl: baseUserUrl
+                                        ,getUser: getUser
+                                        ,createUser: createUser
+                                        ,authenticate: authenticate
+                                        ,userDecoder: userDecoder
+                                        ,usersDecoder: usersDecoder
+                                        ,encodeUser: encodeUser
+                                        ,encodeAuth: encodeAuth
+                                        ,userToken: userToken};
 };
 Elm.Routes = Elm.Routes || {};
 Elm.Routes.make = function (_elm) {
@@ -12790,8 +13087,8 @@ Elm.Routes.make = function (_elm) {
    var encode = function (route) {
       var _p0 = route;
       switch (_p0.ctor)
-      {case "UserHomePage": return "/";
-         case "ListingListPage": return "/listings";
+      {case "UserAuthPage": return "/login";
+         case "ListingListPage": return "/";
          case "NewListingPage": return "/listings/new";
          case "ListingEntityPage": return A2($Basics._op["++"],"/listings/",_p0._0);
          default: return "";}
@@ -12815,14 +13112,14 @@ Elm.Routes.make = function (_elm) {
    var NewListingPage = {ctor: "NewListingPage"};
    var ListingEntityPage = function (a) {    return {ctor: "ListingEntityPage",_0: a};};
    var ListingListPage = {ctor: "ListingListPage"};
-   var UserHomePage = {ctor: "UserHomePage"};
-   var routeParsers = _U.list([A2($RouteParser.$static,UserHomePage,"/")
-                              ,A2($RouteParser.$static,ListingListPage,"/listings")
+   var UserAuthPage = {ctor: "UserAuthPage"};
+   var routeParsers = _U.list([A2($RouteParser.$static,UserAuthPage,"/login")
+                              ,A2($RouteParser.$static,ListingListPage,"/")
                               ,A2($RouteParser.$static,NewListingPage,"/listings/new")
                               ,A4($RouteParser.dyn1,ListingEntityPage,"/listings/",$RouteParser.string,"")]);
    var decode = function (path) {    return A2($Maybe.withDefault,EmptyRoute,A2($RouteParser.match,routeParsers,path));};
    return _elm.Routes.values = {_op: _op
-                               ,UserHomePage: UserHomePage
+                               ,UserAuthPage: UserAuthPage
                                ,ListingListPage: ListingListPage
                                ,ListingEntityPage: ListingEntityPage
                                ,NewListingPage: NewListingPage
@@ -12905,17 +13202,16 @@ Elm.ListingEntity.make = function (_elm) {
            if (_p4.ctor === "Just") {
                  return {ctor: "_Tuple2"
                         ,_0: model
-                        ,_1: A2($ServerEndpoints.updateListing,
-                        A9($ServerEndpoints.Listing,
+                        ,_1: A3($ServerEndpoints.updateListing,
                         _p4._0,
-                        model.title,
-                        model.lType,
-                        model.content,
-                        model.venue,
-                        model.startDate,
-                        model.endDate,
-                        model.limit,
-                        model.closed),
+                        {title: model.title
+                        ,lType: model.lType
+                        ,content: model.content
+                        ,venue: model.venue
+                        ,startDate: model.startDate
+                        ,endDate: model.endDate
+                        ,limit: model.limit
+                        ,closed: model.closed},
                         HandleSaved)};
               } else {
                  return {ctor: "_Tuple2"
@@ -12938,7 +13234,7 @@ Elm.ListingEntity.make = function (_elm) {
                         ,_0: _U.update(model,{id: $Maybe.Just(_p7.id),title: _p7.title})
                         ,_1: A2($Effects.map,function (_p6) {    return NoOp;},$Routes.redirect($Routes.ListingListPage))};
               } else {
-                 return _U.crashCase("ListingEntity",{start: {line: 66,column: 7},end: {line: 74,column: 64}},_p5)("Save failed... we\'re not handling it...");
+                 return _U.crashCase("ListingEntity",{start: {line: 66,column: 7},end: {line: 74,column: 53}},_p5)("Something wrong when saving.");
               }
          default: return {ctor: "_Tuple2",_0: _U.update(model,{title: _p1._0}),_1: $Effects.none};}
    });
@@ -12982,17 +13278,22 @@ Elm.ListingList.make = function (_elm) {
       return A2($Html.tr,
       _U.list([]),
       _U.list([A2($Html.td,_U.list([]),_U.list([$Html.text(listing.title)]))
+              ,A2($Html.td,_U.list([]),_U.list([$Html.text(listing.creator.name)]))
               ,A2($Html.td,
               _U.list([]),
-              _U.list([A2($Html.button,_U.list([$Routes.clickAttr($Routes.ListingEntityPage(listing.id))]),_U.list([$Html.text("Edit")]))]))
+              _U.list([A2($Html.button,
+              _U.list([$Html$Attributes.$class("btn btn-default"),$Routes.clickAttr($Routes.ListingEntityPage(listing.id))]),
+              _U.list([$Html.text("Edit")]))]))
               ,A2($Html.td,
               _U.list([]),
-              _U.list([A2($Html.button,_U.list([A2($Html$Events.onClick,address,CloseListing(listing.id))]),_U.list([$Html.text("Delete")]))]))]));
+              _U.list([A2($Html.button,
+              _U.list([$Html$Attributes.$class("btn btn-default"),A2($Html$Events.onClick,address,CloseListing(listing.id))]),
+              _U.list([$Html.text("Delete")]))]))]));
    });
    var view = F2(function (address,model) {
       return A2($Html.div,
       _U.list([]),
-      _U.list([A2($Html.h1,_U.list([]),_U.list([$Html.text("Listings")]))
+      _U.list([A2($Html.h2,_U.list([]),_U.list([$Html.text("Available Listings")]))
               ,A2($Html.button,
               _U.list([$Html$Attributes.$class("pull-right btn btn-default"),$Routes.clickAttr($Routes.NewListingPage)]),
               _U.list([$Html.text("New Listing")]))
@@ -13003,6 +13304,7 @@ Elm.ListingList.make = function (_elm) {
                       _U.list([A2($Html.tr,
                       _U.list([]),
                       _U.list([A2($Html.th,_U.list([]),_U.list([$Html.text("Title")]))
+                              ,A2($Html.th,_U.list([]),_U.list([$Html.text("Creator")]))
                               ,A2($Html.th,_U.list([]),_U.list([]))
                               ,A2($Html.th,_U.list([]),_U.list([]))]))]))
                       ,A2($Html.tbody,_U.list([]),A2($List.map,listingRow(address),model.listings))]))]));
@@ -13029,39 +13331,211 @@ Elm.ListingList.make = function (_elm) {
                                     ,CloseListing: CloseListing
                                     ,HandleListingClosed: HandleListingClosed};
 };
-Elm.UserHome = Elm.UserHome || {};
-Elm.UserHome.make = function (_elm) {
+Elm.UserAuth = Elm.UserAuth || {};
+Elm.UserAuth.make = function (_elm) {
    "use strict";
-   _elm.UserHome = _elm.UserHome || {};
-   if (_elm.UserHome.values) return _elm.UserHome.values;
+   _elm.UserAuth = _elm.UserAuth || {};
+   if (_elm.UserAuth.values) return _elm.UserAuth.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
    $Effects = Elm.Effects.make(_elm),
    $Html = Elm.Html.make(_elm),
+   $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $Html$Events = Elm.Html.Events.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
+   $Routes = Elm.Routes.make(_elm),
+   $ServerEndpoints = Elm.ServerEndpoints.make(_elm),
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
-   var view = F2(function (address,model) {    return A2($Html.div,_U.list([]),_U.list([$Html.text("Reserved for User")]));});
+   var SetUserContact = function (a) {    return {ctor: "SetUserContact",_0: a};};
+   var SetUserPassword = function (a) {    return {ctor: "SetUserPassword",_0: a};};
+   var SetUserEmail = function (a) {    return {ctor: "SetUserEmail",_0: a};};
+   var SetUserName = function (a) {    return {ctor: "SetUserName",_0: a};};
+   var HandleAuthentication = function (a) {    return {ctor: "HandleAuthentication",_0: a};};
+   var Register = {ctor: "Register"};
+   var Authenticate = {ctor: "Authenticate"};
+   var view = F2(function (address,model) {
+      return A2($Html.div,
+      _U.list([]),
+      _U.list([A2($Html.div,
+              _U.list([$Html$Attributes.$class("col-sm-6")]),
+              _U.list([A2($Html.h1,_U.list([]),_U.list([$Html.text("Login")]))
+                      ,A2($Html.form,
+                      _U.list([$Html$Attributes.$class("form-horizontal")]),
+                      _U.list([A2($Html.div,
+                              _U.list([$Html$Attributes.$class("form-group")]),
+                              _U.list([A2($Html.label,_U.list([$Html$Attributes.$class("col-sm-3 control-label")]),_U.list([$Html.text("Email")]))
+                                      ,A2($Html.div,
+                                      _U.list([$Html$Attributes.$class("col-sm-9")]),
+                                      _U.list([A2($Html.input,
+                                      _U.list([$Html$Attributes.type$("email")
+                                              ,$Html$Attributes.$class("form-control")
+                                              ,$Html$Attributes.placeholder("Email")
+                                              ,A3($Html$Events.on,
+                                              "input",
+                                              $Html$Events.targetValue,
+                                              function (str) {
+                                                 return A2($Signal.message,address,SetUserEmail(str));
+                                              })]),
+                                      _U.list([]))]))]))
+                              ,A2($Html.div,
+                              _U.list([$Html$Attributes.$class("form-group")]),
+                              _U.list([A2($Html.label,_U.list([$Html$Attributes.$class("col-sm-3 control-label")]),_U.list([$Html.text("Password")]))
+                                      ,A2($Html.div,
+                                      _U.list([$Html$Attributes.$class("col-sm-9")]),
+                                      _U.list([A2($Html.input,
+                                      _U.list([$Html$Attributes.type$("password")
+                                              ,$Html$Attributes.$class("form-control")
+                                              ,$Html$Attributes.placeholder("Password")
+                                              ,A3($Html$Events.on,
+                                              "input",
+                                              $Html$Events.targetValue,
+                                              function (str) {
+                                                 return A2($Signal.message,address,SetUserPassword(str));
+                                              })]),
+                                      _U.list([]))]))]))
+                              ,A2($Html.div,
+                              _U.list([$Html$Attributes.$class("form-group")]),
+                              _U.list([A2($Html.div,
+                              _U.list([$Html$Attributes.$class("col-sm-offset-3 col-sm-9")]),
+                              _U.list([A2($Html.button,
+                              _U.list([$Html$Attributes.type$("button")
+                                      ,$Html$Attributes.$class("btn btn-default")
+                                      ,A2($Html$Events.onClick,address,Authenticate)]),
+                              _U.list([$Html.text("Sign In")]))]))]))]))]))
+              ,A2($Html.div,
+              _U.list([$Html$Attributes.$class("col-sm-6")]),
+              _U.list([A2($Html.h1,_U.list([]),_U.list([$Html.text("Registration")]))
+                      ,A2($Html.form,
+                      _U.list([$Html$Attributes.$class("form-horizontal")]),
+                      _U.list([A2($Html.div,
+                              _U.list([$Html$Attributes.$class("form-group")]),
+                              _U.list([A2($Html.label,_U.list([$Html$Attributes.$class("col-sm-3 control-label")]),_U.list([$Html.text("Email")]))
+                                      ,A2($Html.div,
+                                      _U.list([$Html$Attributes.$class("col-sm-9")]),
+                                      _U.list([A2($Html.input,
+                                      _U.list([$Html$Attributes.type$("email")
+                                              ,$Html$Attributes.$class("form-control")
+                                              ,$Html$Attributes.placeholder("Email")
+                                              ,A3($Html$Events.on,
+                                              "input",
+                                              $Html$Events.targetValue,
+                                              function (str) {
+                                                 return A2($Signal.message,address,SetUserEmail(str));
+                                              })]),
+                                      _U.list([]))]))]))
+                              ,A2($Html.div,
+                              _U.list([$Html$Attributes.$class("form-group")]),
+                              _U.list([A2($Html.label,_U.list([$Html$Attributes.$class("col-sm-3 control-label")]),_U.list([$Html.text("Password")]))
+                                      ,A2($Html.div,
+                                      _U.list([$Html$Attributes.$class("col-sm-9")]),
+                                      _U.list([A2($Html.input,
+                                      _U.list([$Html$Attributes.type$("password")
+                                              ,$Html$Attributes.$class("form-control")
+                                              ,$Html$Attributes.placeholder("Password")
+                                              ,A3($Html$Events.on,
+                                              "input",
+                                              $Html$Events.targetValue,
+                                              function (str) {
+                                                 return A2($Signal.message,address,SetUserPassword(str));
+                                              })]),
+                                      _U.list([]))]))]))
+                              ,A2($Html.div,
+                              _U.list([$Html$Attributes.$class("form-group")]),
+                              _U.list([A2($Html.label,_U.list([$Html$Attributes.$class("col-sm-3 control-label")]),_U.list([$Html.text("Name")]))
+                                      ,A2($Html.div,
+                                      _U.list([$Html$Attributes.$class("col-sm-9")]),
+                                      _U.list([A2($Html.input,
+                                      _U.list([$Html$Attributes.$class("form-control")
+                                              ,$Html$Attributes.placeholder("Name")
+                                              ,A3($Html$Events.on,
+                                              "input",
+                                              $Html$Events.targetValue,
+                                              function (str) {
+                                                 return A2($Signal.message,address,SetUserName(str));
+                                              })]),
+                                      _U.list([]))]))]))
+                              ,A2($Html.div,
+                              _U.list([$Html$Attributes.$class("form-group")]),
+                              _U.list([A2($Html.label,_U.list([$Html$Attributes.$class("col-sm-3 control-label")]),_U.list([$Html.text("Contact")]))
+                                      ,A2($Html.div,
+                                      _U.list([$Html$Attributes.$class("col-sm-9")]),
+                                      _U.list([A2($Html.input,
+                                      _U.list([$Html$Attributes.$class("form-control")
+                                              ,$Html$Attributes.placeholder("Contact")
+                                              ,A3($Html$Events.on,
+                                              "input",
+                                              $Html$Events.targetValue,
+                                              function (str) {
+                                                 return A2($Signal.message,address,SetUserContact(str));
+                                              })]),
+                                      _U.list([]))]))]))
+                              ,A2($Html.div,
+                              _U.list([$Html$Attributes.$class("form-group")]),
+                              _U.list([A2($Html.div,
+                              _U.list([$Html$Attributes.$class("col-sm-offset-3 col-sm-9")]),
+                              _U.list([A2($Html.button,
+                              _U.list([$Html$Attributes.type$("button"),$Html$Attributes.$class("btn btn-default"),A2($Html$Events.onClick,address,Register)]),
+                              _U.list([$Html.text("Register")]))]))]))]))]))]));
+   });
+   var ShowAuth = {ctor: "ShowAuth"};
+   var NoOp = {ctor: "NoOp"};
    var update = F2(function (action,model) {
       update: while (true) {
          var _p0 = action;
-         if (_p0.ctor === "NoOp") {
-               return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
-            } else {
-               var _v1 = action,_v2 = model;
-               action = _v1;
-               model = _v2;
-               continue update;
-            }
+         switch (_p0.ctor)
+         {case "NoOp": return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+            case "ShowAuth": var _p1 = model.id;
+              if (_p1.ctor === "Just") {
+                    return {ctor: "_Tuple2",_0: model,_1: A2($Effects.map,function (_p2) {    return NoOp;},$Routes.redirect($Routes.ListingListPage))};
+                 } else {
+                    var _v2 = action,_v3 = model;
+                    action = _v2;
+                    model = _v3;
+                    continue update;
+                 }
+            case "Authenticate": return {ctor: "_Tuple2"
+                                        ,_0: model
+                                        ,_1: A2($ServerEndpoints.authenticate,{email: model.email,password: model.password},HandleAuthentication)};
+            case "Register": return {ctor: "_Tuple2"
+                                    ,_0: model
+                                    ,_1: A2($ServerEndpoints.createUser,
+                                    {name: model.name,contact: model.contact,email: model.email,password: model.password},
+                                    HandleAuthentication)};
+            case "HandleAuthentication": var _p3 = _p0._0;
+              if (_p3.ctor === "Just") {
+                    var _p5 = _p3._0;
+                    return {ctor: "_Tuple2"
+                           ,_0: _U.update(model,{id: $Maybe.Just(_p5.id),name: _p5.name,email: _p5.email,contact: _p5.contact})
+                           ,_1: A2($Effects.map,function (_p4) {    return NoOp;},$Routes.redirect($Routes.ListingListPage))};
+                 } else {
+                    return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+                 }
+            case "SetUserName": return {ctor: "_Tuple2",_0: _U.update(model,{name: _p0._0}),_1: $Effects.none};
+            case "SetUserPassword": return {ctor: "_Tuple2",_0: _U.update(model,{password: _p0._0}),_1: $Effects.none};
+            case "SetUserEmail": return {ctor: "_Tuple2",_0: _U.update(model,{email: _p0._0}),_1: $Effects.none};
+            default: return {ctor: "_Tuple2",_0: _U.update(model,{contact: _p0._0}),_1: $Effects.none};}
       }
    });
-   var Show = {ctor: "Show"};
-   var NoOp = {ctor: "NoOp"};
-   var init = {ctor: "_Tuple0"};
-   return _elm.UserHome.values = {_op: _op,init: init,NoOp: NoOp,Show: Show,update: update,view: view};
+   var Model = F5(function (a,b,c,d,e) {    return {id: a,name: b,email: c,password: d,contact: e};});
+   var init = A5(Model,$Maybe.Nothing,"","","","");
+   return _elm.UserAuth.values = {_op: _op
+                                 ,init: init
+                                 ,view: view
+                                 ,update: update
+                                 ,Model: Model
+                                 ,NoOp: NoOp
+                                 ,ShowAuth: ShowAuth
+                                 ,Authenticate: Authenticate
+                                 ,Register: Register
+                                 ,HandleAuthentication: HandleAuthentication
+                                 ,SetUserName: SetUserName
+                                 ,SetUserEmail: SetUserEmail
+                                 ,SetUserPassword: SetUserPassword
+                                 ,SetUserContact: SetUserContact};
 };
 Elm.ShareApp = Elm.ShareApp || {};
 Elm.ShareApp.make = function (_elm) {
@@ -13086,7 +13560,7 @@ Elm.ShareApp.make = function (_elm) {
    $Task = Elm.Task.make(_elm),
    $TransitRouter = Elm.TransitRouter.make(_elm),
    $TransitStyle = Elm.TransitStyle.make(_elm),
-   $UserHome = Elm.UserHome.make(_elm);
+   $UserAuth = Elm.UserAuth.make(_elm);
    var _op = {};
    var initialPath = Elm.Native.Port.make(_elm).inbound("initialPath",
    "String",
@@ -13108,10 +13582,10 @@ Elm.ShareApp.make = function (_elm) {
               _U.list([A2($Html.li,_U.list([]),_U.list([A2($Html.a,$Routes.linkAttrs($Routes.ListingListPage),_U.list([$Html.text("Listings")]))]))]))
               ,A2($Html.ul,
               _U.list([$Html$Attributes.$class("nav navbar-nav navbar-right")]),
-              _U.list([A2($Html.li,_U.list([]),_U.list([A2($Html.a,$Routes.linkAttrs($Routes.UserHomePage),_U.list([$Html.text("Login/Register")]))]))]))]))]));
+              _U.list([A2($Html.li,_U.list([]),_U.list([A2($Html.a,$Routes.linkAttrs($Routes.UserAuthPage),_U.list([$Html.text("Login/Register")]))]))]))]))]));
    });
    var initialModel = {transitRouter: $TransitRouter.empty($Routes.EmptyRoute)
-                      ,userHomeModel: $UserHome.init
+                      ,userAuthModel: $UserAuth.init
                       ,listingListModel: $ListingList.init
                       ,listingEntityModel: $ListingEntity.init};
    var RouterAction = function (a) {    return {ctor: "RouterAction",_0: a};};
@@ -13121,7 +13595,7 @@ Elm.ShareApp.make = function (_elm) {
    var mountRoute = F3(function (prevRoute,route,model) {
       var _p0 = route;
       switch (_p0.ctor)
-      {case "UserHomePage": return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+      {case "UserAuthPage": return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
          case "ListingListPage": return {ctor: "_Tuple2"
                                         ,_0: model
                                         ,_1: A2($Effects.map,ListingListAction,$ServerEndpoints.getListings($ListingList.HandleListingsRetrieved))};
@@ -13135,16 +13609,16 @@ Elm.ShareApp.make = function (_elm) {
                       ,getDurations: F3(function (_p3,_p2,_p1) {    return {ctor: "_Tuple2",_0: 50,_1: 200};})
                       ,actionWrapper: RouterAction
                       ,routeDecoder: $Routes.decode};
-   var init = function (path) {    return A3($TransitRouter.init,routerConfig,path,initialModel);};
-   var HomeAction = function (a) {    return {ctor: "HomeAction",_0: a};};
+   var init = function (path) {    var usePath = _U.eq(path,"/index.html") ? "/" : path;return A3($TransitRouter.init,routerConfig,usePath,initialModel);};
+   var UserAuthAction = function (a) {    return {ctor: "UserAuthAction",_0: a};};
    var update = F2(function (action,model) {
       var _p4 = action;
       switch (_p4.ctor)
       {case "NoOp": return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
-         case "HomeAction": var _p5 = A2($UserHome.update,_p4._0,model.userHomeModel);
+         case "UserAuthAction": var _p5 = A2($UserAuth.update,_p4._0,model.userAuthModel);
            var model$ = _p5._0;
            var effects = _p5._1;
-           return {ctor: "_Tuple2",_0: _U.update(model,{userHomeModel: model$}),_1: A2($Effects.map,HomeAction,effects)};
+           return {ctor: "_Tuple2",_0: _U.update(model,{userAuthModel: model$}),_1: A2($Effects.map,UserAuthAction,effects)};
          case "ListingListAction": var _p6 = A2($ListingList.update,_p4._0,model.listingListModel);
            var model$ = _p6._0;
            var effects = _p6._1;
@@ -13158,7 +13632,7 @@ Elm.ShareApp.make = function (_elm) {
    var contentView = F2(function (address,model) {
       var _p8 = $TransitRouter.getRoute(model);
       switch (_p8.ctor)
-      {case "UserHomePage": return A2($UserHome.view,A2($Signal.forwardTo,address,HomeAction),model.userHomeModel);
+      {case "UserAuthPage": return A2($UserAuth.view,A2($Signal.forwardTo,address,UserAuthAction),model.userAuthModel);
          case "ListingListPage": return A2($ListingList.view,A2($Signal.forwardTo,address,ListingListAction),model.listingListModel);
          case "ListingEntityPage": return A2($ListingEntity.view,A2($Signal.forwardTo,address,ListingEntityAction),model.listingEntityModel);
          case "NewListingPage": return A2($ListingEntity.view,A2($Signal.forwardTo,address,ListingEntityAction),model.listingEntityModel);
@@ -13178,7 +13652,7 @@ Elm.ShareApp.make = function (_elm) {
    var NoOp = {ctor: "NoOp"};
    return _elm.ShareApp.values = {_op: _op
                                  ,NoOp: NoOp
-                                 ,HomeAction: HomeAction
+                                 ,UserAuthAction: UserAuthAction
                                  ,ListingListAction: ListingListAction
                                  ,ListingEntityAction: ListingEntityAction
                                  ,RouterAction: RouterAction

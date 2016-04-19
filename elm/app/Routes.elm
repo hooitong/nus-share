@@ -10,7 +10,7 @@ import Html.Events exposing (on, onClick, onWithOptions)
 import Signal
 
 type Route
-  = UserHomePage
+  = UserAuthPage
   | ListingListPage
   | ListingEntityPage String
   | NewListingPage
@@ -18,8 +18,8 @@ type Route
 
 routeParsers : List (Matcher Route)
 routeParsers =
-  [ static UserHomePage "/",
-    static ListingListPage "/listings",
+  [ static UserAuthPage "/login",
+    static ListingListPage "/",
     static NewListingPage "/listings/new",
     dyn1 ListingEntityPage "/listings/" string ""
   ]
@@ -33,11 +33,11 @@ decode path =
 encode : Route -> String
 encode route =
   case route of
-    UserHomePage -> "/"
-    ListingListPage   -> "/listings"
+    UserAuthPage         -> "/login"
+    ListingListPage      -> "/"
     NewListingPage       -> "/listings/new"
     ListingEntityPage id -> "/listings/" ++ id
-    EmptyRoute -> ""
+    EmptyRoute           -> ""
 
 
 redirect : Route -> Effects ()

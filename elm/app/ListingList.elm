@@ -5,11 +5,11 @@ import Routes
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, on, targetValue)
-import Http
 import Effects exposing (Effects, Never)
+import Http
 
 type alias Model =
-  { listings : List Listing}
+  { listings : List Listing }
 
 type Action =
     Show
@@ -38,19 +38,20 @@ update action model =
     HandleListingClosed res ->
       (model, getListings HandleListingsRetrieved)
 
------- VIEW ------
+-- View Portion
 listingRow : Signal.Address Action -> Listing -> Html
 listingRow address listing =
   tr [] [
-     td [] [text listing.title]
-    ,td [] [button [ Routes.clickAttr <| Routes.ListingEntityPage listing.id ] [text "Edit"]]
-    ,td [] [button [ onClick address (CloseListing listing.id)] [ text "Delete" ]]
+    td [] [text listing.title],
+    td [] [text listing.creator.name],
+    td [] [button [class "btn btn-default", Routes.clickAttr <| Routes.ListingEntityPage listing.id ] [text "Edit"]],
+    td [] [button [class "btn btn-default", onClick address (CloseListing listing.id)] [ text "Delete" ]]
   ]
 
 view : Signal.Address Action -> Model -> Html
 view address model =
   div [] [
-      h1 [] [text "Listings" ]
+      h2 [] [text "Available Listings" ]
     , button [
             class "pull-right btn btn-default"
           , Routes.clickAttr Routes.NewListingPage
@@ -59,9 +60,10 @@ view address model =
     , table [class "table table-striped"] [
           thead [] [
             tr [] [
-               th [] [text "Title"]
-              ,th [] []
-              ,th [] []
+              th [] [text "Title"],
+              th [] [text "Creator"],
+              th [] [],
+              th [] []
           ]
         ]
         , tbody [] (List.map (listingRow address) model.listings)

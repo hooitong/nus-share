@@ -2,7 +2,7 @@ module ShareApp where
 
 import ListingList
 import ListingEntity
-import UserHome
+import UserAuth
 import Routes exposing (..)
 import ServerEndpoints
 
@@ -17,25 +17,25 @@ import TransitStyle
 
 import Debug exposing (..)
 
-type alias Model = WithRoute Routes.Route
-  { userHomeModel : UserHome.Model
-  , listingListModel : ListingList.Model
-  , listingEntityModel : ListingEntity.Model
+type alias Model = WithRoute Routes.Route {
+    userAuthModel : UserAuth.Model,
+    listingListModel : ListingList.Model,
+    listingEntityModel : ListingEntity.Model
   }
 
 type Action =
     NoOp
-  | HomeAction UserHome.Action
+  | UserAuthAction UserAuth.Action
   | ListingListAction ListingList.Action
   | ListingEntityAction ListingEntity.Action
   | RouterAction (TransitRouter.Action Routes.Route)
 
 initialModel : Model
-initialModel =
-  { transitRouter = TransitRouter.empty Routes.EmptyRoute
-  , userHomeModel = UserHome.init
-  , listingListModel = ListingList.init
-  , listingEntityModel = ListingEntity.init
+initialModel = {
+    transitRouter = TransitRouter.empty Routes.EmptyRoute,
+    userAuthModel = UserAuth.init,
+    listingListModel = ListingList.init,
+    listingEntityModel = ListingEntity.init
   }
 
 
@@ -47,7 +47,7 @@ actions =
 mountRoute : Route -> Route -> Model -> (Model, Effects Action)
 mountRoute prevRoute route model =
   case route of
-    UserHomePage ->
+    UserAuthPage ->
       (model, Effects.none)
 
     ListingListPage ->
@@ -64,17 +64,17 @@ mountRoute prevRoute route model =
 
 
 routerConfig : TransitRouter.Config Routes.Route Action Model
-routerConfig =
-  { mountRoute = mountRoute
-  , getDurations = \_ _ _ -> (50, 200)
-  , actionWrapper = RouterAction
-  , routeDecoder = Routes.decode
+routerConfig = {
+    mountRoute = mountRoute,
+    getDurations = \_ _ _ -> (50, 200),
+    actionWrapper = RouterAction,
+    routeDecoder = Routes.decode
   }
 
 
 init : String -> (Model, Effects Action)
 init path =
-  TransitRouter.init routerConfig path initialModel
+  TransitRouter.init routerConfig usePath initialModel
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
@@ -82,10 +82,10 @@ update action model =
     NoOp ->
       (model, Effects.none)
 
-    HomeAction homeAction ->
-      let (model', effects) = UserHome.update homeAction model.userHomeModel
-      in ( { model | userHomeModel = model' }
-         , Effects.map HomeAction effects )
+    UserAuthAction userAuthAction ->
+      let (model', effects) = UserAuth.update userAuthAction model.userAuthModel
+      in ( { model | userAuthModel = model' }
+         , Effects.map UserAuthAction effects )
 
     ListingListAction act ->
       let (model', effects) = ListingList.update act model.listingListModel
@@ -115,7 +115,7 @@ menu address model =
           li [] [a (linkAttrs ListingListPage) [ text "Listings" ]]
         ],
         ul [class "nav navbar-nav navbar-right"] [
-          li [] [a (linkAttrs UserHomePage) [text "Login/Register"]]
+          li [] [a (linkAttrs UserAuthPage) [text "Login/Register"]]
         ]
     ]
   ]
@@ -123,8 +123,8 @@ menu address model =
 contentView : Signal.Address Action -> Model -> Html
 contentView address model =
   case (TransitRouter.getRoute model) of
-    UserHomePage ->
-      UserHome.view (Signal.forwardTo address HomeAction) model.userHomeModel
+    UserAuthPage ->
+      UserAuth.view (Signal.forwardTo address UserAuthAction) model.userAuthModel
 
     ListingListPage ->
       ListingList.view (Signal.forwardTo address ListingListAction) model.listingListModel
@@ -150,11 +150,11 @@ view address model =
 -- wiring up start app
 app : StartApp.App Model
 app =
-  StartApp.start
-    { init = init initialPath
-    , update = update
-    , view = view
-    , inputs = [actions]
+  StartApp.start {
+      init = init initialPath,
+      update = update,
+      view = view,
+      inputs = [actions]
     }
 
 main : Signal Html

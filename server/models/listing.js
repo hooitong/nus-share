@@ -1,7 +1,7 @@
 'use strict';
 const _ = require('lodash');
 const uuid = require('node-uuid');
-
+const User = require('./user');
 module.exports = function (sequelize, DataTypes) {
   return sequelize.define('listing', {
     id: {
@@ -28,7 +28,7 @@ module.exports = function (sequelize, DataTypes) {
           });
       },
       getListingById(listingId) {
-        return this.findById(listingId);
+        return this.find({where: {id: listingId}, include: [{all: true}, this.associations.users]});
       },
       updateListing(listingId, updateContent) {
         return this.findById(listingId)
@@ -40,7 +40,7 @@ module.exports = function (sequelize, DataTypes) {
         return this.findAll();
       },
       getValidListings(currentDate) {
-        return this.findAll({ where: { endDate: { $gt: currentDate }, closed: false } })
+        return this.findAll({ where: { endDate: { $gt: currentDate }, closed: false }, include: [{all: true}, this.associations.users] })
           .then(pendingListings => {
             return _.filter(pendingListings, listing => {
               return listing.getUsers()

@@ -23,7 +23,7 @@ modelFiles.forEach(model => {
 });
 
 (m => {
-  m.listing.belongsTo(m.user, { as: 'Creator' });
+  m.listing.belongsTo(m.user, { as: 'creator' });
   m.listing.belongsToMany(m.user, { through: 'user_listing' });
   m.user.belongsToMany(m.listing, { through: 'user_listing' });
 })(module.exports);

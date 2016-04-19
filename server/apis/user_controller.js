@@ -1,7 +1,6 @@
 'use strict';
 const _ = require('lodash');
 const config = require('config');
-const jwt = require('jsonwebtoken');
 
 const User = require('../models').user;
 
@@ -27,7 +26,7 @@ function getUser(req, res) {
 
 function updateUser(req, res) {
   const userId = req.params.userId;
-  const payload = req.body.payload;
+  const payload = req.body;
   return User.updateUser(userId, payload)
     .then(user => {
       res.json(user);
@@ -41,11 +40,9 @@ function authenticate(req, res) {
 
   User.getUserByEmail(email)
     .then(user => {
-      if (!user) res.json({ success: false, message: AUTH_ERROR }, 400);
-      else if (user.validatePassword(password)) {
-        const token = jwt.sign(user.toJSON(), config.secret);
-        res.json({ success: true, authToken: token });
-      } else res.json({ success: false, message: AUTH_ERROR }, 400);
+      if (!user) res.json({message: AUTH_ERROR }, 400);
+      else if (user.validatePassword(password)) res.json(user);
+      else res.json({message: AUTH_ERROR }, 400);
     });
 }
 

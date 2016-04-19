@@ -58,7 +58,7 @@ update action model =
     SaveListing ->
       case model.id of
         Just id ->
-          (model, updateListing (Listing id model.title model.lType model.content model.venue model.startDate model.endDate model.limit model.closed) HandleSaved)
+          (model, updateListing id {title = model.title, lType = model.lType, content = model.content, venue = model.venue, startDate = model.startDate, endDate = model.endDate, limit = model.limit, closed = model.closed } HandleSaved)
         Nothing ->
           (model, createListing {title = model.title, lType = model.lType, content = model.content, venue = model.venue, startDate = model.startDate, endDate = model.endDate, limit = model.limit, closed = model.closed } HandleSaved)
 
@@ -71,13 +71,11 @@ update action model =
           )
 
         Nothing ->
-          Debug.crash "Save failed... we're not handling it..."
+          Debug.crash "Something wrong when saving."
 
 
     SetListingTitle text ->
-      ( { model | title = text }
-      , Effects.none
-      )
+      ({model | title = text}, Effects.none)
 
 
 pageTitle : Model -> String
@@ -85,7 +83,6 @@ pageTitle model =
   case model.id of
     Just x -> "Edit Listing"
     Nothing -> "New Listing"
-
 
 
 view : Signal.Address Action -> Model -> Html

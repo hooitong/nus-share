@@ -12,7 +12,7 @@ function getListings(req, res) {
 }
 
 function addListing(req, res) {
-  const listingInfo = req.body.listing;
+  const listingInfo = req.body;
   const creator = req.body.userId;
   return Listing.createListing(listingInfo, creator)
     .then(listing => {
@@ -22,7 +22,7 @@ function addListing(req, res) {
 
 function updateListing(req, res) {
   const listingId = req.params.listingId;
-  const listingInfo = req.body.listing;
+  const listingInfo = req.body;
   return Listing.updateListing(listingId, listingInfo)
     .then(listing => {
       res.json(listing);
