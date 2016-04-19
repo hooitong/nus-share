@@ -94,6 +94,18 @@ closeListing id action =
   |> Task.map action
   |> Effects.task
 
+registerUser: String -> String -> (Maybe Http.Response -> a) -> Effects.Effects a
+registerUser id userId action =
+  Http.send Http.defaultSettings {
+    verb = "PUT",
+    url = baseListingUrl ++ "/" ++ id ++ "/" ++ userId,
+    body = Http.empty,
+    headers = []
+  }
+  |> Task.toMaybe
+  |> Task.map action
+  |> Effects.task
+
 -- JSON Decoders and Encoders for Listings
 listingDecoder : JsonD.Decoder Listing
 listingDecoder = Listing

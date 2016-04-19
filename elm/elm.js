@@ -12969,6 +12969,16 @@ Elm.ServerEndpoints.make = function (_elm) {
       $Http.defaultSettings,
       {verb: "DELETE",url: A2($Basics._op["++"],baseListingUrl,A2($Basics._op["++"],"/",id)),body: $Http.empty,headers: _U.list([])}))));
    });
+   var registerUser = F3(function (id,userId,action) {
+      return $Effects.task(A2($Task.map,
+      action,
+      $Task.toMaybe(A2($Http.send,
+      $Http.defaultSettings,
+      {verb: "PUT"
+      ,url: A2($Basics._op["++"],baseListingUrl,A2($Basics._op["++"],"/",A2($Basics._op["++"],id,A2($Basics._op["++"],"/",userId))))
+      ,body: $Http.empty
+      ,headers: _U.list([])}))));
+   });
    var Listing = function (a) {
       return function (b) {
          return function (c) {
@@ -13050,6 +13060,7 @@ Elm.ServerEndpoints.make = function (_elm) {
                                         ,createListing: createListing
                                         ,updateListing: updateListing
                                         ,closeListing: closeListing
+                                        ,registerUser: registerUser
                                         ,listingDecoder: listingDecoder
                                         ,listingsDecoder: listingsDecoder
                                         ,encodeListing: encodeListing
@@ -13273,22 +13284,35 @@ Elm.ListingList.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
    var HandleListingClosed = function (a) {    return {ctor: "HandleListingClosed",_0: a};};
-   var CloseListing = function (a) {    return {ctor: "CloseListing",_0: a};};
+   var RegisterUser = function (a) {    return {ctor: "RegisterUser",_0: a};};
    var listingRow = F2(function (address,listing) {
       return A2($Html.tr,
       _U.list([]),
-      _U.list([A2($Html.td,_U.list([]),_U.list([$Html.text(listing.title)]))
-              ,A2($Html.td,_U.list([]),_U.list([$Html.text(listing.creator.name)]))
+      _U.list([A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(listing.title)]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(listing.creator.name)]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(listing.venue)]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(listing.startDate)]))
+              ,A2($Html.td,
+              _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
+              _U.list([$Html.text(listing.endDate)]))
               ,A2($Html.td,
               _U.list([]),
               _U.list([A2($Html.button,
               _U.list([$Html$Attributes.$class("btn btn-default"),$Routes.clickAttr($Routes.ListingEntityPage(listing.id))]),
-              _U.list([$Html.text("Edit")]))]))
+              _U.list([$Html.text("View")]))]))
               ,A2($Html.td,
               _U.list([]),
               _U.list([A2($Html.button,
-              _U.list([$Html$Attributes.$class("btn btn-default"),A2($Html$Events.onClick,address,CloseListing(listing.id))]),
-              _U.list([$Html.text("Delete")]))]))]));
+              _U.list([$Html$Attributes.$class("btn btn-primary"),A2($Html$Events.onClick,address,RegisterUser(listing.id))]),
+              _U.list([$Html.text("Help")]))]))]));
    });
    var view = F2(function (address,model) {
       return A2($Html.div,
@@ -13305,17 +13329,27 @@ Elm.ListingList.make = function (_elm) {
                       _U.list([]),
                       _U.list([A2($Html.th,_U.list([]),_U.list([$Html.text("Title")]))
                               ,A2($Html.th,_U.list([]),_U.list([$Html.text("Creator")]))
+                              ,A2($Html.th,_U.list([]),_U.list([$Html.text("Venue")]))
+                              ,A2($Html.th,_U.list([]),_U.list([$Html.text("Start Date")]))
+                              ,A2($Html.th,_U.list([]),_U.list([$Html.text("End Date")]))
                               ,A2($Html.th,_U.list([]),_U.list([]))
                               ,A2($Html.th,_U.list([]),_U.list([]))]))]))
                       ,A2($Html.tbody,_U.list([]),A2($List.map,listingRow(address),model.listings))]))]));
    });
+   var CloseListing = function (a) {    return {ctor: "CloseListing",_0: a};};
    var HandleListingsRetrieved = function (a) {    return {ctor: "HandleListingsRetrieved",_0: a};};
-   var update = F2(function (action,model) {
+   var update = F3(function (action,model,userId) {
       var _p0 = action;
       switch (_p0.ctor)
       {case "Show": return {ctor: "_Tuple2",_0: model,_1: $ServerEndpoints.getListings(HandleListingsRetrieved)};
          case "HandleListingsRetrieved": return {ctor: "_Tuple2",_0: _U.update(model,{listings: A2($Maybe.withDefault,_U.list([]),_p0._0)}),_1: $Effects.none};
          case "CloseListing": return {ctor: "_Tuple2",_0: model,_1: A2($ServerEndpoints.closeListing,_p0._0,HandleListingClosed)};
+         case "RegisterUser": var _p1 = A2($Debug.log,"test111",userId);
+           if (_p1.ctor === "Just") {
+                 return {ctor: "_Tuple2",_0: model,_1: A3($ServerEndpoints.registerUser,_p0._0,A2($Debug.log,"test22",_p1._0),HandleListingClosed)};
+              } else {
+                 return {ctor: "_Tuple2",_0: model,_1: $ServerEndpoints.getListings(HandleListingsRetrieved)};
+              }
          default: return {ctor: "_Tuple2",_0: model,_1: $ServerEndpoints.getListings(HandleListingsRetrieved)};}
    });
    var Show = {ctor: "Show"};
@@ -13329,6 +13363,7 @@ Elm.ListingList.make = function (_elm) {
                                     ,Show: Show
                                     ,HandleListingsRetrieved: HandleListingsRetrieved
                                     ,CloseListing: CloseListing
+                                    ,RegisterUser: RegisterUser
                                     ,HandleListingClosed: HandleListingClosed};
 };
 Elm.UserAuth = Elm.UserAuth || {};
@@ -13567,6 +13602,14 @@ Elm.ShareApp.make = function (_elm) {
    function (v) {
       return typeof v === "string" || typeof v === "object" && v instanceof String ? v : _U.badPort("a string",v);
    });
+   var navAuthTitle = function (name) {
+      var _p0 = name;
+      if (_p0 === "") {
+            return "Login / Register";
+         } else {
+            return A2($Basics._op["++"],"Welcome, ",name);
+         }
+   };
    var menu = F2(function (address,model) {
       return A2($Html.header,
       _U.list([$Html$Attributes.$class("navbar navbar-default")]),
@@ -13582,56 +13625,61 @@ Elm.ShareApp.make = function (_elm) {
               _U.list([A2($Html.li,_U.list([]),_U.list([A2($Html.a,$Routes.linkAttrs($Routes.ListingListPage),_U.list([$Html.text("Listings")]))]))]))
               ,A2($Html.ul,
               _U.list([$Html$Attributes.$class("nav navbar-nav navbar-right")]),
-              _U.list([A2($Html.li,_U.list([]),_U.list([A2($Html.a,$Routes.linkAttrs($Routes.UserAuthPage),_U.list([$Html.text("Login/Register")]))]))]))]))]));
+              _U.list([A2($Html.li,
+              _U.list([]),
+              _U.list([A2($Html.a,$Routes.linkAttrs($Routes.UserAuthPage),_U.list([$Html.text(navAuthTitle(model.userAuthModel.name))]))]))]))]))]));
    });
    var initialModel = {transitRouter: $TransitRouter.empty($Routes.EmptyRoute)
                       ,userAuthModel: $UserAuth.init
                       ,listingListModel: $ListingList.init
-                      ,listingEntityModel: $ListingEntity.init};
+                      ,listingEntityModel: $ListingEntity.init
+                      ,userId: $Maybe.Nothing};
    var RouterAction = function (a) {    return {ctor: "RouterAction",_0: a};};
    var actions = A2($Signal.map,RouterAction,$TransitRouter.actions);
    var ListingEntityAction = function (a) {    return {ctor: "ListingEntityAction",_0: a};};
    var ListingListAction = function (a) {    return {ctor: "ListingListAction",_0: a};};
    var mountRoute = F3(function (prevRoute,route,model) {
-      var _p0 = route;
-      switch (_p0.ctor)
+      var _p1 = route;
+      switch (_p1.ctor)
       {case "UserAuthPage": return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
          case "ListingListPage": return {ctor: "_Tuple2"
                                         ,_0: model
                                         ,_1: A2($Effects.map,ListingListAction,$ServerEndpoints.getListings($ListingList.HandleListingsRetrieved))};
          case "ListingEntityPage": return {ctor: "_Tuple2"
                                           ,_0: model
-                                          ,_1: A2($Effects.map,ListingEntityAction,A2($ServerEndpoints.getListing,_p0._0,$ListingEntity.ShowListing))};
+                                          ,_1: A2($Effects.map,ListingEntityAction,A2($ServerEndpoints.getListing,_p1._0,$ListingEntity.ShowListing))};
          case "NewListingPage": return {ctor: "_Tuple2",_0: _U.update(model,{listingEntityModel: $ListingEntity.init}),_1: $Effects.none};
          default: return {ctor: "_Tuple2",_0: model,_1: $Effects.none};}
    });
    var routerConfig = {mountRoute: mountRoute
-                      ,getDurations: F3(function (_p3,_p2,_p1) {    return {ctor: "_Tuple2",_0: 50,_1: 200};})
+                      ,getDurations: F3(function (_p4,_p3,_p2) {    return {ctor: "_Tuple2",_0: 50,_1: 200};})
                       ,actionWrapper: RouterAction
                       ,routeDecoder: $Routes.decode};
-   var init = function (path) {    var usePath = _U.eq(path,"/index.html") ? "/" : path;return A3($TransitRouter.init,routerConfig,usePath,initialModel);};
+   var init = function (path) {    return A3($TransitRouter.init,routerConfig,path,initialModel);};
    var UserAuthAction = function (a) {    return {ctor: "UserAuthAction",_0: a};};
    var update = F2(function (action,model) {
-      var _p4 = action;
-      switch (_p4.ctor)
+      var _p5 = action;
+      switch (_p5.ctor)
       {case "NoOp": return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
-         case "UserAuthAction": var _p5 = A2($UserAuth.update,_p4._0,model.userAuthModel);
-           var model$ = _p5._0;
-           var effects = _p5._1;
-           return {ctor: "_Tuple2",_0: _U.update(model,{userAuthModel: model$}),_1: A2($Effects.map,UserAuthAction,effects)};
-         case "ListingListAction": var _p6 = A2($ListingList.update,_p4._0,model.listingListModel);
+         case "UserAuthAction": var _p6 = A2($UserAuth.update,_p5._0,model.userAuthModel);
            var model$ = _p6._0;
            var effects = _p6._1;
-           return {ctor: "_Tuple2",_0: _U.update(model,{listingListModel: model$}),_1: A2($Effects.map,ListingListAction,effects)};
-         case "ListingEntityAction": var _p7 = A2($ListingEntity.update,_p4._0,model.listingEntityModel);
+           return {ctor: "_Tuple2"
+                  ,_0: _U.update(model,{userAuthModel: A2($Debug.log,"bb",model$),userId: model$.id})
+                  ,_1: A2($Effects.map,UserAuthAction,effects)};
+         case "ListingListAction": var _p7 = A3($ListingList.update,_p5._0,model.listingListModel,model.userId);
            var model$ = _p7._0;
            var effects = _p7._1;
+           return {ctor: "_Tuple2",_0: _U.update(model,{listingListModel: A2($Debug.log,"aa",model$)}),_1: A2($Effects.map,ListingListAction,effects)};
+         case "ListingEntityAction": var _p8 = A2($ListingEntity.update,_p5._0,model.listingEntityModel);
+           var model$ = _p8._0;
+           var effects = _p8._1;
            return {ctor: "_Tuple2",_0: _U.update(model,{listingEntityModel: model$}),_1: A2($Effects.map,ListingEntityAction,effects)};
-         default: return A3($TransitRouter.update,routerConfig,_p4._0,model);}
+         default: return A3($TransitRouter.update,routerConfig,_p5._0,model);}
    });
    var contentView = F2(function (address,model) {
-      var _p8 = $TransitRouter.getRoute(model);
-      switch (_p8.ctor)
+      var _p9 = $TransitRouter.getRoute(model);
+      switch (_p9.ctor)
       {case "UserAuthPage": return A2($UserAuth.view,A2($Signal.forwardTo,address,UserAuthAction),model.userAuthModel);
          case "ListingListPage": return A2($ListingList.view,A2($Signal.forwardTo,address,ListingListAction),model.listingListModel);
          case "ListingEntityPage": return A2($ListingEntity.view,A2($Signal.forwardTo,address,ListingEntityAction),model.listingEntityModel);
@@ -13663,6 +13711,7 @@ Elm.ShareApp.make = function (_elm) {
                                  ,init: init
                                  ,update: update
                                  ,menu: menu
+                                 ,navAuthTitle: navAuthTitle
                                  ,contentView: contentView
                                  ,view: view
                                  ,app: app

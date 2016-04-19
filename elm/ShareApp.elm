@@ -20,7 +20,8 @@ import Debug exposing (..)
 type alias Model = WithRoute Routes.Route {
     userAuthModel : UserAuth.Model,
     listingListModel : ListingList.Model,
-    listingEntityModel : ListingEntity.Model
+    listingEntityModel : ListingEntity.Model,
+    userId: Maybe (String)
   }
 
 type Action =
@@ -35,7 +36,8 @@ initialModel = {
     transitRouter = TransitRouter.empty Routes.EmptyRoute,
     userAuthModel = UserAuth.init,
     listingListModel = ListingList.init,
-    listingEntityModel = ListingEntity.init
+    listingEntityModel = ListingEntity.init,
+    userId = Nothing
   }
 
 
@@ -74,7 +76,7 @@ routerConfig = {
 
 init : String -> (Model, Effects Action)
 init path =
-  TransitRouter.init routerConfig usePath initialModel
+  TransitRouter.init routerConfig path initialModel
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
@@ -84,12 +86,12 @@ update action model =
 
     UserAuthAction userAuthAction ->
       let (model', effects) = UserAuth.update userAuthAction model.userAuthModel
-      in ( { model | userAuthModel = model' }
+      in ( { model | userAuthModel = (log "bb" model'), userId = model'.id  }
          , Effects.map UserAuthAction effects )
 
     ListingListAction act ->
-      let (model', effects) = ListingList.update act model.listingListModel
-      in ( { model | listingListModel = model' }
+      let (model', effects) = ListingList.update act model.listingListModel model.userId
+      in ( { model | listingListModel = (log "aa" model')}
          , Effects.map ListingListAction effects )
 
     ListingEntityAction act ->
@@ -115,10 +117,17 @@ menu address model =
           li [] [a (linkAttrs ListingListPage) [ text "Listings" ]]
         ],
         ul [class "nav navbar-nav navbar-right"] [
-          li [] [a (linkAttrs UserAuthPage) [text "Login/Register"]]
+          li [] [a (linkAttrs UserAuthPage) [text <| navAuthTitle model.userAuthModel.name]]
         ]
     ]
   ]
+
+navAuthTitle : String -> String
+navAuthTitle name =
+  case name of
+    "" -> "Login / Register"
+    _ -> "Welcome, " ++ name
+
 
 contentView : Signal.Address Action -> Model -> Html
 contentView address model =
@@ -158,11 +167,9 @@ app =
     }
 
 main : Signal Html
-main =
-  app.html
+main = app.html
 
 port tasks : Signal (Task.Task Never ())
-port tasks =
-  app.tasks
+port tasks = app.tasks
 
 port initialPath : String
