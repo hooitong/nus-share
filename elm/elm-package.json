@@ -5,7 +5,10 @@
     "license": "BSD3",
     "source-directories": [
         ".",
-        "app/"
+        "modules/common/",
+        "modules/listings/",
+        "modules/router/",
+        "modules/users/"
     ],
     "exposed-modules": [],
     "dependencies": {

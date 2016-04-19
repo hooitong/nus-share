@@ -9,13 +9,13 @@ import Task
 import Jwt exposing (..)
 import Debug exposing (log)
 
-
 -- Listing Related Endpoint Handlers
 -- Models for Listing Related
 type alias ListingRequest a =
   { a |
     title: String,
     lType: String,
+    creatorId: String,
     content: String,
     venue: String,
     startDate: String,
@@ -144,6 +144,7 @@ encodeListing a =
     ("title", JsonE.string a.title),
     ("type", JsonE.string a.lType),
     ("content", JsonE.string a.content),
+    ("creatorId", JsonE.string a.creatorId),
     ("venue", JsonE.string a.venue),
     ("startDate", JsonE.string a.startDate),
     ("endDate", JsonE.string a.endDate),

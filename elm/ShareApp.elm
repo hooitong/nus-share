@@ -17,9 +17,9 @@ import Signal exposing (message)
 import StartApp
 import TransitRouter exposing (WithRoute, getTransition)
 import TransitStyle
-
 import Debug exposing (..)
 
+-- Setup model types for each module imported
 type alias Model = WithRoute Routes.Route {
     userAuthModel : UserAuth.Model,
     listingListModel : ListingList.Model,
@@ -29,16 +29,7 @@ type alias Model = WithRoute Routes.Route {
     userId: Maybe (String)
   }
 
-type Action =
-    NoOp
-  | UserAuthAction UserAuth.Action
-  | ListingListAction ListingList.Action
-  | ListingEntityAction ListingEntity.Action
-  | MyListingsAction MyListings.Action
-  | ParticipatedListingsAction ParticipatedListings.Action
-  | RouterAction (TransitRouter.Action Routes.Route)
-  | LogoutAction
-
+-- Initialize model with empty models using pure functions in modules
 initialModel : Model
 initialModel = {
     transitRouter = TransitRouter.empty Routes.EmptyRoute,
@@ -50,12 +41,22 @@ initialModel = {
     userId = Nothing
   }
 
+-- Setup action types for each module imported
+type Action =
+    NoOp
+  | UserAuthAction UserAuth.Action
+  | ListingListAction ListingList.Action
+  | ListingEntityAction ListingEntity.Action
+  | MyListingsAction MyListings.Action
+  | ParticipatedListingsAction ParticipatedListings.Action
+  | RouterAction (TransitRouter.Action Routes.Route)
+  | LogoutAction
 
 actions : Signal Action
 actions =
   Signal.map RouterAction TransitRouter.actions
 
-
+-- Provides the correct update when new route mounted
 mountRoute : Route -> Route -> Model -> (Model, Effects Action)
 mountRoute prevRoute route model =
   case route of
@@ -69,7 +70,7 @@ mountRoute prevRoute route model =
       (model, Effects.map ListingEntityAction (ServerEndpoints.getListing listingId ListingEntity.ShowListing))
 
     MyListingsPage ->
-      case (log "mmmm" model).userId of
+      case model.userId of
         Nothing ->
           (model, Effects.none)
 
@@ -77,7 +78,7 @@ mountRoute prevRoute route model =
           (model, Effects.map MyListingsAction (ServerEndpoints.getCreatorListings userId MyListings.HandleListingsRetrieved))
 
     ParticipatedListingsPage ->
-      case (log "mmmm" model).userId of
+      case model.userId of
         Nothing ->
           (model, Effects.none)
 
@@ -90,7 +91,6 @@ mountRoute prevRoute route model =
     EmptyRoute ->
       (model, Effects.none)
 
-
 routerConfig : TransitRouter.Config Routes.Route Action Model
 routerConfig = {
     mountRoute = mountRoute,
@@ -99,11 +99,11 @@ routerConfig = {
     routeDecoder = Routes.decode
   }
 
-
 init : String -> (Model, Effects Action)
 init path =
   TransitRouter.init routerConfig path initialModel
 
+-- Update based on given action requested and return the corresponding effect
 update : Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
@@ -112,34 +112,34 @@ update action model =
 
     UserAuthAction userAuthAction ->
       let (model', effects) = UserAuth.update userAuthAction model.userAuthModel
-      in ( { model | userAuthModel = (log "bb" model'), userId = model'.id  }
-         , Effects.map UserAuthAction effects )
+      in ( { model | userAuthModel = model', userId = model'.id  },
+           Effects.map UserAuthAction effects )
 
     ListingListAction act ->
       let (model', effects) = ListingList.update act model.listingListModel model.userId
-      in ( { model | listingListModel = (log "aa" model')}
-         , Effects.map ListingListAction effects )
+      in ( { model | listingListModel = model'},
+           Effects.map ListingListAction effects )
 
     ListingEntityAction act ->
-      let (model', effects) = ListingEntity.update act model.listingEntityModel
-      in ( { model | listingEntityModel = model' }
-         , Effects.map ListingEntityAction effects )
+      let (model', effects) = ListingEntity.update act model.listingEntityModel model.userId
+      in ( { model | listingEntityModel = model' },
+           Effects.map ListingEntityAction effects )
 
     MyListingsAction act ->
-      case (log "test222" model.userId) of
+      case model.userId of
         Nothing -> (model, Effects.none)
         Just userId' ->
           let (model', effects) = MyListings.update act model.myListingsModel userId'
-          in ( { model | myListingsModel = (log "aa" model')}
-              , Effects.map MyListingsAction effects )
+          in ( { model | myListingsModel = model'},
+                Effects.map MyListingsAction effects )
 
     ParticipatedListingsAction act ->
-      case (log "test222" model.userId) of
+      case model.userId of
         Nothing -> (model, Effects.none)
         Just userId' ->
           let (model', effects) = ParticipatedListings.update act model.participatedListingsModel userId'
-          in ( { model | participatedListingsModel = (log "aa" model')}
-              , Effects.map ParticipatedListingsAction effects )
+          in ( { model | participatedListingsModel = model'},
+                Effects.map ParticipatedListingsAction effects )
 
     RouterAction routeAction ->
       TransitRouter.update routerConfig routeAction model
@@ -168,7 +168,7 @@ menu address model =
             li [] [a (linkAttrs UserAuthPage) [text <| navAuthTitle model.userAuthModel]]
           ],
           ul [class "nav navbar-nav", hidden <| (model.userId == Nothing)] [
-            li [] [button [class "btn btn-info navbar-btn", type' "button", onClick address LogoutAction] [text "Logout"]]
+            li [] [button [class "btn btn-info navbar-btn", type' "button", onClick address LogoutAction] [span [class "glyphicon glyphicon-send"] [], text "  Logout"]]
           ]
         ]
     ]
@@ -208,13 +208,13 @@ contentView address model =
 view : Signal.Address Action -> Model -> Html
 view address model =
   div [class "container-fluid"] [
-      menu address model
-    , div [ class "content"
-          , style (TransitStyle.fadeSlideLeft 100 (getTransition model))]
+      menu address model,
+      div [ class "content",
+            style (TransitStyle.fadeSlideLeft 100 (getTransition model))]
           [contentView address model]
   ]
 
--- wiring up start app
+-- Wiring up StartApp boilerplate with our defined views, inputs, router, update
 app : StartApp.App Model
 app =
   StartApp.start {

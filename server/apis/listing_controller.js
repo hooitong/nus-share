@@ -1,5 +1,6 @@
 'use strict';
 const _ = require('lodash');
+const chrono = require('chrono-node');
 const moment = require('moment');
 const Promise = require('bluebird');
 
@@ -15,10 +16,21 @@ function getListings(req, res) {
 
 function addListing(req, res) {
   const listingInfo = req.body;
-  const creator = req.body.userId;
+  listingInfo.startDate = moment(Date.parse(chrono.parseDate(listingInfo.startDate))).format();
+  listingInfo.endDate = moment(Date.parse(chrono.parseDate(listingInfo.endDate))).format();
+  const creator = listingInfo.creatorId;
+  delete listingInfo.creatorId;
+
   return Listing.createListing(listingInfo, creator)
     .then(listing => {
-      res.json(listing);
+      return listing.getCreator()
+        .then(user => {
+          listing = listing.toJSON();
+          user = user.toJSON();
+          listing.creator = user;
+          listing.users = [];
+          res.json(listing);
+        });
     });
 }
 
@@ -72,12 +84,12 @@ function getParticipatedListings(req, res) {
     .then(listings => {
       const promiseArray = [];
       listings.forEach(listing => {
-        promiseArray.push(Listing.getListingById(listing.id))
+        promiseArray.push(Listing.getListingById(listing.id));
       });
       return Promise.all(promiseArray);
     })
     .then(listings => {
-      res.json(listings);
+      res.json(_.orderBy(listings, ['startDate', 'endDate', 'title'], ['desc', 'desc', 'asc']));
     });
 }
 

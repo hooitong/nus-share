@@ -13055,6 +13055,7 @@ Elm.ServerEndpoints.make = function (_elm) {
       $Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "title",_1: $Json$Encode.string(a.title)}
                                   ,{ctor: "_Tuple2",_0: "type",_1: $Json$Encode.string(a.lType)}
                                   ,{ctor: "_Tuple2",_0: "content",_1: $Json$Encode.string(a.content)}
+                                  ,{ctor: "_Tuple2",_0: "creatorId",_1: $Json$Encode.string(a.creatorId)}
                                   ,{ctor: "_Tuple2",_0: "venue",_1: $Json$Encode.string(a.venue)}
                                   ,{ctor: "_Tuple2",_0: "startDate",_1: $Json$Encode.string(a.startDate)}
                                   ,{ctor: "_Tuple2",_0: "endDate",_1: $Json$Encode.string(a.endDate)}
@@ -13378,7 +13379,7 @@ Elm.ListingEntity.make = function (_elm) {
                                       _U.list([A2($Html.h4,_U.list([]),_U.list([$Html.text("Closed")]))]))
                                       ,A2($Html.td,
                                       _U.list([$Html$Attributes.style(_U.list([{ctor: "_Tuple2",_0: "vertical-align",_1: "middle"}]))]),
-                                      _U.list([$Html.text($Basics.toString(A2($Debug.log,"Test99",model).closed))]))]))
+                                      _U.list([$Html.text($Basics.toString(model.closed))]))]))
                               ,A2($Html.tr,
                               _U.list([]),
                               _U.list([A2($Html.td,
@@ -13617,11 +13618,11 @@ Elm.ListingEntity.make = function (_elm) {
       };
    };
    var init = Model($Maybe.Nothing)("")("")("")("")("")("")(0)(false)($Maybe.Nothing)($Maybe.Nothing);
-   var update = F2(function (action,model) {
+   var update = F3(function (action,model,userId) {
       var _p4 = action;
       switch (_p4.ctor)
       {case "NoOp": return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
-         case "GetListing": return {ctor: "_Tuple2",_0: model,_1: A2($ServerEndpoints.getListing,A2($Debug.log,"id",_p4._0),ShowListing)};
+         case "GetListing": return {ctor: "_Tuple2",_0: model,_1: A2($ServerEndpoints.getListing,_p4._0,ShowListing)};
          case "ShowListing": var _p5 = _p4._0;
            if (_p5.ctor === "Just") {
                  var _p6 = _p5._0;
@@ -13642,37 +13643,43 @@ Elm.ListingEntity.make = function (_elm) {
               } else {
                  return {ctor: "_Tuple2",_0: init,_1: $Effects.none};
               }
-         case "SaveListing": return {ctor: "_Tuple2"
-                                    ,_0: model
-                                    ,_1: A2($ServerEndpoints.createListing,
-                                    {title: model.title
-                                    ,lType: model.lType
-                                    ,content: model.content
-                                    ,venue: model.venue
-                                    ,startDate: model.startDate
-                                    ,endDate: model.endDate
-                                    ,limit: model.limit
-                                    ,closed: model.closed},
-                                    HandleSaved)};
-         case "HandleSaved": var _p7 = _p4._0;
-           if (_p7.ctor === "Just") {
-                 var _p9 = _p7._0;
+         case "SaveListing": var _p7 = userId;
+           if (_p7.ctor === "Nothing") {
+                 return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+              } else {
+                 return {ctor: "_Tuple2"
+                        ,_0: model
+                        ,_1: A2($ServerEndpoints.createListing,
+                        {title: model.title
+                        ,lType: model.lType
+                        ,content: model.content
+                        ,venue: model.venue
+                        ,startDate: model.startDate
+                        ,endDate: model.endDate
+                        ,limit: model.limit
+                        ,closed: model.closed
+                        ,creatorId: _p7._0},
+                        HandleSaved)};
+              }
+         case "HandleSaved": var _p8 = _p4._0;
+           if (_p8.ctor === "Just") {
+                 var _p10 = _p8._0;
                  return {ctor: "_Tuple2"
                         ,_0: _U.update(model,
-                        {id: $Maybe.Just(_p9.id)
-                        ,title: _p9.title
-                        ,lType: _p9.lType
-                        ,content: _p9.content
-                        ,venue: _p9.venue
-                        ,startDate: _p9.startDate
-                        ,endDate: _p9.endDate
-                        ,limit: _p9.limit
-                        ,closed: _p9.closed
-                        ,creator: $Maybe.Just(_p9.creator)
-                        ,users: $Maybe.Just(_p9.users)})
-                        ,_1: A2($Effects.map,function (_p8) {    return NoOp;},$Routes.redirect($Routes.ListingListPage))};
+                        {id: $Maybe.Just(_p10.id)
+                        ,title: _p10.title
+                        ,lType: _p10.lType
+                        ,content: _p10.content
+                        ,venue: _p10.venue
+                        ,startDate: _p10.startDate
+                        ,endDate: _p10.endDate
+                        ,limit: _p10.limit
+                        ,closed: _p10.closed
+                        ,creator: $Maybe.Just(_p10.creator)
+                        ,users: $Maybe.Just(_p10.users)})
+                        ,_1: A2($Effects.map,function (_p9) {    return NoOp;},$Routes.redirect($Routes.ListingListPage))};
               } else {
-                 return _U.crashCase("ListingEntity",{start: {line: 79,column: 7},end: {line: 97,column: 53}},_p7)("Something wrong when saving.");
+                 return _U.crashCase("ListingEntity",{start: {line: 88,column: 7},end: {line: 106,column: 53}},_p8)("Something wrong when saving.");
               }
          case "SetListingTitle": return {ctor: "_Tuple2",_0: _U.update(model,{title: _p4._0}),_1: $Effects.none};
          case "SetListinglType": return {ctor: "_Tuple2",_0: _U.update(model,{lType: _p4._0}),_1: $Effects.none};
@@ -13683,9 +13690,9 @@ Elm.ListingEntity.make = function (_elm) {
          default: return {ctor: "_Tuple2"
                          ,_0: _U.update(model,
                          {limit: function () {
-                            var _p11 = $String.toInt(_p4._0);
-                            if (_p11.ctor === "Ok") {
-                                  return _p11._0;
+                            var _p12 = $String.toInt(_p4._0);
+                            if (_p12.ctor === "Ok") {
+                                  return _p12._0;
                                } else {
                                   return 1;
                                }
@@ -13796,7 +13803,7 @@ Elm.ListingList.make = function (_elm) {
                                     }
                               }()))
                               ,$Routes.clickAttr($Routes.NewListingPage)]),
-                      _U.list([$Html.text("New Listing")]))]))
+                      _U.list([A2($Html.span,_U.list([$Html$Attributes.$class("glyphicon glyphicon-plus")]),_U.list([])),$Html.text(" New Listing")]))]))
               ,A2($Html.table,
               _U.list([$Html$Attributes.$class("table table-striped")]),
               _U.list([A2($Html.thead,
@@ -13817,9 +13824,9 @@ Elm.ListingList.make = function (_elm) {
       switch (_p6.ctor)
       {case "Show": return {ctor: "_Tuple2",_0: model,_1: $ServerEndpoints.getListings(HandleListingsRetrieved)};
          case "HandleListingsRetrieved": return {ctor: "_Tuple2",_0: _U.update(model,{listings: A2($Maybe.withDefault,_U.list([]),_p6._0)}),_1: $Effects.none};
-         case "RegisterUser": var _p7 = A2($Debug.log,"test111",userId);
+         case "RegisterUser": var _p7 = userId;
            if (_p7.ctor === "Just") {
-                 return {ctor: "_Tuple2",_0: model,_1: A3($ServerEndpoints.registerUser,_p6._0,A2($Debug.log,"test22",_p7._0),HandleUserParticipation)};
+                 return {ctor: "_Tuple2",_0: model,_1: A3($ServerEndpoints.registerUser,_p6._0,_p7._0,HandleUserParticipation)};
               } else {
                  return {ctor: "_Tuple2",_0: model,_1: $ServerEndpoints.getListings(HandleListingsRetrieved)};
               }
@@ -13909,7 +13916,7 @@ Elm.MyListings.make = function (_elm) {
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Start Date")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("End Date")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([]))]))]))
-                      ,A2($Html.tbody,_U.list([]),A2($List.map,A2(listingRow,address,userId),A2($Debug.log,"kkk",model).listings))]))]));
+                      ,A2($Html.tbody,_U.list([]),A2($List.map,A2(listingRow,address,userId),model.listings))]))]));
    });
    var HandleListingsRetrieved = function (a) {    return {ctor: "HandleListingsRetrieved",_0: a};};
    var update = F3(function (action,model,userId) {
@@ -13995,7 +14002,7 @@ Elm.ParticipatedListings.make = function (_elm) {
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("Start Date")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([$Html.text("End Date")]))
                               ,A2($Html.th,_U.list([$Html$Attributes.$class("col-sm-2")]),_U.list([]))]))]))
-                      ,A2($Html.tbody,_U.list([]),A2($List.map,A2(listingRow,address,userId),A2($Debug.log,"kkk",model).listings))]))]));
+                      ,A2($Html.tbody,_U.list([]),A2($List.map,A2(listingRow,address,userId),model.listings))]))]));
    });
    var HandleListingsRetrieved = function (a) {    return {ctor: "HandleListingsRetrieved",_0: a};};
    var update = F3(function (action,model,userId) {
@@ -14264,13 +14271,6 @@ Elm.ShareApp.make = function (_elm) {
             return "Login / Register";
          }
    };
-   var initialModel = {transitRouter: $TransitRouter.empty($Routes.EmptyRoute)
-                      ,userAuthModel: $UserAuth.init
-                      ,listingListModel: $ListingList.init
-                      ,listingEntityModel: $ListingEntity.init
-                      ,myListingsModel: $MyListings.init
-                      ,participatedListingsModel: $ParticipatedListings.init
-                      ,userId: $Maybe.Nothing};
    var LogoutAction = {ctor: "LogoutAction"};
    var menu = F2(function (address,model) {
       return A2($Html.header,
@@ -14305,7 +14305,8 @@ Elm.ShareApp.make = function (_elm) {
                       _U.list([$Html$Attributes.$class("btn btn-info navbar-btn")
                               ,$Html$Attributes.type$("button")
                               ,A2($Html$Events.onClick,address,LogoutAction)]),
-                      _U.list([$Html.text("Logout")]))]))]))]))]))]));
+                      _U.list([A2($Html.span,_U.list([$Html$Attributes.$class("glyphicon glyphicon-send")]),_U.list([]))
+                              ,$Html.text("  Logout")]))]))]))]))]))]));
    });
    var RouterAction = function (a) {    return {ctor: "RouterAction",_0: a};};
    var actions = A2($Signal.map,RouterAction,$TransitRouter.actions);
@@ -14323,7 +14324,7 @@ Elm.ShareApp.make = function (_elm) {
          case "ListingEntityPage": return {ctor: "_Tuple2"
                                           ,_0: model
                                           ,_1: A2($Effects.map,ListingEntityAction,A2($ServerEndpoints.getListing,_p1._0,$ListingEntity.ShowListing))};
-         case "MyListingsPage": var _p2 = A2($Debug.log,"mmmm",model).userId;
+         case "MyListingsPage": var _p2 = model.userId;
            if (_p2.ctor === "Nothing") {
                  return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
               } else {
@@ -14331,7 +14332,7 @@ Elm.ShareApp.make = function (_elm) {
                         ,_0: model
                         ,_1: A2($Effects.map,MyListingsAction,A2($ServerEndpoints.getCreatorListings,_p2._0,$MyListings.HandleListingsRetrieved))};
               }
-         case "ParticipatedListingsPage": var _p3 = A2($Debug.log,"mmmm",model).userId;
+         case "ParticipatedListingsPage": var _p3 = model.userId;
            if (_p3.ctor === "Nothing") {
                  return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
               } else {
@@ -14348,7 +14349,6 @@ Elm.ShareApp.make = function (_elm) {
                       ,getDurations: F3(function (_p6,_p5,_p4) {    return {ctor: "_Tuple2",_0: 50,_1: 200};})
                       ,actionWrapper: RouterAction
                       ,routeDecoder: $Routes.decode};
-   var init = function (path) {    return A3($TransitRouter.init,routerConfig,path,initialModel);};
    var UserAuthAction = function (a) {    return {ctor: "UserAuthAction",_0: a};};
    var update = F2(function (action,model) {
       var _p7 = action;
@@ -14357,36 +14357,32 @@ Elm.ShareApp.make = function (_elm) {
          case "UserAuthAction": var _p8 = A2($UserAuth.update,_p7._0,model.userAuthModel);
            var model$ = _p8._0;
            var effects = _p8._1;
-           return {ctor: "_Tuple2"
-                  ,_0: _U.update(model,{userAuthModel: A2($Debug.log,"bb",model$),userId: model$.id})
-                  ,_1: A2($Effects.map,UserAuthAction,effects)};
+           return {ctor: "_Tuple2",_0: _U.update(model,{userAuthModel: model$,userId: model$.id}),_1: A2($Effects.map,UserAuthAction,effects)};
          case "ListingListAction": var _p9 = A3($ListingList.update,_p7._0,model.listingListModel,model.userId);
            var model$ = _p9._0;
            var effects = _p9._1;
-           return {ctor: "_Tuple2",_0: _U.update(model,{listingListModel: A2($Debug.log,"aa",model$)}),_1: A2($Effects.map,ListingListAction,effects)};
-         case "ListingEntityAction": var _p10 = A2($ListingEntity.update,_p7._0,model.listingEntityModel);
+           return {ctor: "_Tuple2",_0: _U.update(model,{listingListModel: model$}),_1: A2($Effects.map,ListingListAction,effects)};
+         case "ListingEntityAction": var _p10 = A3($ListingEntity.update,_p7._0,model.listingEntityModel,model.userId);
            var model$ = _p10._0;
            var effects = _p10._1;
            return {ctor: "_Tuple2",_0: _U.update(model,{listingEntityModel: model$}),_1: A2($Effects.map,ListingEntityAction,effects)};
-         case "MyListingsAction": var _p11 = A2($Debug.log,"test222",model.userId);
+         case "MyListingsAction": var _p11 = model.userId;
            if (_p11.ctor === "Nothing") {
                  return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
               } else {
                  var _p12 = A3($MyListings.update,_p7._0,model.myListingsModel,_p11._0);
                  var model$ = _p12._0;
                  var effects = _p12._1;
-                 return {ctor: "_Tuple2",_0: _U.update(model,{myListingsModel: A2($Debug.log,"aa",model$)}),_1: A2($Effects.map,MyListingsAction,effects)};
+                 return {ctor: "_Tuple2",_0: _U.update(model,{myListingsModel: model$}),_1: A2($Effects.map,MyListingsAction,effects)};
               }
-         case "ParticipatedListingsAction": var _p13 = A2($Debug.log,"test222",model.userId);
+         case "ParticipatedListingsAction": var _p13 = model.userId;
            if (_p13.ctor === "Nothing") {
                  return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
               } else {
                  var _p14 = A3($ParticipatedListings.update,_p7._0,model.participatedListingsModel,_p13._0);
                  var model$ = _p14._0;
                  var effects = _p14._1;
-                 return {ctor: "_Tuple2"
-                        ,_0: _U.update(model,{participatedListingsModel: A2($Debug.log,"aa",model$)})
-                        ,_1: A2($Effects.map,ParticipatedListingsAction,effects)};
+                 return {ctor: "_Tuple2",_0: _U.update(model,{participatedListingsModel: model$}),_1: A2($Effects.map,ParticipatedListingsAction,effects)};
               }
          case "RouterAction": return A3($TransitRouter.update,routerConfig,_p7._0,model);
          default: return {ctor: "_Tuple2",_0: _U.update(model,{userAuthModel: $UserAuth.init,userId: $Maybe.Nothing}),_1: $Effects.none};}
@@ -14413,11 +14409,20 @@ Elm.ShareApp.make = function (_elm) {
               _U.list([$Html$Attributes.$class("content"),$Html$Attributes.style(A2($TransitStyle.fadeSlideLeft,100,$TransitRouter.getTransition(model)))]),
               _U.list([A2(contentView,address,model)]))]));
    });
+   var NoOp = {ctor: "NoOp"};
+   var initialModel = {transitRouter: $TransitRouter.empty($Routes.EmptyRoute)
+                      ,userAuthModel: $UserAuth.init
+                      ,listingListModel: $ListingList.init
+                      ,listingEntityModel: $ListingEntity.init
+                      ,myListingsModel: $MyListings.init
+                      ,participatedListingsModel: $ParticipatedListings.init
+                      ,userId: $Maybe.Nothing};
+   var init = function (path) {    return A3($TransitRouter.init,routerConfig,path,initialModel);};
    var app = $StartApp.start({init: init(initialPath),update: update,view: view,inputs: _U.list([actions])});
    var main = app.html;
    var tasks = Elm.Native.Task.make(_elm).performSignal("tasks",app.tasks);
-   var NoOp = {ctor: "NoOp"};
    return _elm.ShareApp.values = {_op: _op
+                                 ,initialModel: initialModel
                                  ,NoOp: NoOp
                                  ,UserAuthAction: UserAuthAction
                                  ,ListingListAction: ListingListAction
@@ -14426,7 +14431,6 @@ Elm.ShareApp.make = function (_elm) {
                                  ,ParticipatedListingsAction: ParticipatedListingsAction
                                  ,RouterAction: RouterAction
                                  ,LogoutAction: LogoutAction
-                                 ,initialModel: initialModel
                                  ,actions: actions
                                  ,mountRoute: mountRoute
                                  ,routerConfig: routerConfig

@@ -2,6 +2,7 @@ module ListingEntity (Model, Action (..), init, view, update) where
 
 import ServerEndpoints exposing (..)
 import Routes
+
 import Effects exposing (Effects)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -11,6 +12,8 @@ import String exposing (toInt)
 import Date exposing (..)
 import Date.Format exposing (..)
 
+---- MODEL ----
+-- Application state for each entity
 type alias Model = {
   id: Maybe String,
   title: String,
@@ -25,6 +28,7 @@ type alias Model = {
   users: Maybe(List User)
 }
 
+---- UPDATE ----
 type Action =
     NoOp
   | GetListing (String)
@@ -43,14 +47,14 @@ init : Model
 init =
    Model Nothing "" "" "" "" "" "" 0 False Nothing Nothing
 
-update : Action -> Model -> (Model, Effects Action)
-update action model =
+update : Action -> Model -> Maybe(String) -> (Model, Effects Action)
+update action model userId =
   case action of
     NoOp ->
       (model, Effects.none)
 
     GetListing id ->
-      (model, getListing (log "id" id) ShowListing)
+      (model, getListing id ShowListing)
 
     ShowListing maybeListing ->
       case maybeListing of
@@ -73,7 +77,12 @@ update action model =
           (init, Effects.none)
 
     SaveListing ->
-      (model, createListing {title = model.title, lType = model.lType, content = model.content, venue = model.venue, startDate = model.startDate, endDate = model.endDate, limit = model.limit, closed = model.closed } HandleSaved)
+      case userId of
+        Nothing ->
+          (model, Effects.none)
+
+        Just userId' ->
+          (model, createListing {title = model.title, lType = model.lType, content = model.content, venue = model.venue, startDate = model.startDate, endDate = model.endDate, limit = model.limit, closed = model.closed, creatorId = userId' } HandleSaved)
 
     HandleSaved maybeListing ->
       case maybeListing of
@@ -121,6 +130,7 @@ update action model =
                           Err _ -> 1
                         )}, Effects.none)
 
+---- VIEW ----
 view : Signal.Address Action -> Model -> Maybe(String) -> Html
 view address model userId =
   case model.id of
@@ -261,7 +271,7 @@ viewListing address model userId =
             ],
             tr [] [
               td [style [("vertical-align", "middle")]] [h4 [] [text "Closed"]],
-              td [style [("vertical-align", "middle")]] [text (toString (log "Test99" model).closed)]
+              td [style [("vertical-align", "middle")]] [text (toString model.closed)]
             ],
             tr [] [
               td [style [("vertical-align", "middle")]] [h4 [] [text "Creator"]],
@@ -310,6 +320,7 @@ viewListing address model userId =
     ]
   ]
 
+-- Helper Methods
 userRow : Signal.Address Action -> User -> Html
 userRow address user =
   tr [] [

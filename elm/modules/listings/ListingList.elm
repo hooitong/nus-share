@@ -2,6 +2,7 @@ module ListingList (Model, Action (..), init, view, update) where
 
 import ServerEndpoints exposing (..)
 import Routes
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, on, targetValue)
@@ -12,6 +13,7 @@ import List exposing (..)
 import Date exposing (..)
 import Date.Format exposing (..)
 
+---- MODEL ----
 type alias Model =
   { listings : List Listing }
 
@@ -36,8 +38,8 @@ update action model userId =
       )
 
     RegisterUser id ->
-      case (log "test111" userId) of
-        Just userId' -> (model, registerUser id (log "test22" userId') HandleUserParticipation)
+      case userId of
+        Just userId' -> (model, registerUser id userId' HandleUserParticipation)
         Nothing -> (model, getListings HandleListingsRetrieved)
 
     HandleUserParticipation res ->
@@ -65,7 +67,7 @@ view address model userId =
                                                                     Nothing -> "hidden"
                                                                   )),
                                                                   Routes.clickAttr Routes.NewListingPage]
-                           [text "New Listing"]
+                           [span [class "glyphicon glyphicon-plus"] [], text " New Listing"]
             ],
       table [class "table table-striped"] [
           thead [] [

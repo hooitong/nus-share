@@ -44,7 +44,8 @@ module.exports = function (sequelize, DataTypes) {
       getCreatorListings(userId) {
         return this.findAll({
           where: { creator_id: userId },
-          include: [{ all: true }, this.associations.users]
+          include: [{ all: true }, this.associations.users],
+          order: [['startDate', 'DESC'], ['endDate', 'DESC'], ['title', 'ASC']]
         });
       },
       getParticipatedListings(user) {
@@ -52,15 +53,15 @@ module.exports = function (sequelize, DataTypes) {
       },
       getValidListings(currentDate) {
         return this.findAll({
-            where: { endDate: { $gt: currentDate }, closed: false },
-            include: [{ all: true }, this.associations.users]
-          })
-          .then(pendingListings => {
-            return _.filter(pendingListings, listing => {
-              return listing.getUsers()
-                .then(participants => (participants.count || 0) < listing.limit);
-            });
+          where: { endDate: { $gt: currentDate }, closed: false },
+          include: [{ all: true }, this.associations.users],
+          order: [['startDate', 'DESC'], ['endDate', 'DESC'], ['title', 'ASC']]
+        }).then(pendingListings => {
+          return _.filter(pendingListings, listing => {
+            return listing.getUsers()
+              .then(participants => (participants.count || 0) < listing.limit);
           });
+        });
       },
       registerUser(userId, listingId) {
         return this.findById(listingId)

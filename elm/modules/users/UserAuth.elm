@@ -7,6 +7,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, on, targetValue)
 import Effects exposing (Effects, Never)
 
+---- MODEL ----
 type alias Model = {
   id: Maybe String,
   name: String,
@@ -15,6 +16,7 @@ type alias Model = {
   contact: String
 }
 
+---- UPDATE ----
 init : Model
 init = Model Nothing "" "" "" ""
 
@@ -70,6 +72,7 @@ update action model =
     SetUserContact text ->
       ({model | contact = text}, Effects.none)
 
+---- VIEW ----
 view : Signal.Address Action -> Model -> Html
 view address model =
   div [class "container"] [
