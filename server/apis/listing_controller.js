@@ -1,8 +1,10 @@
 'use strict';
 const _ = require('lodash');
 const moment = require('moment');
+const Promise = require('bluebird');
 
 const Listing = require('../models').listing;
+const User = require('../models').user;
 
 function getListings(req, res) {
   return Listing.getValidListings(moment().format())
@@ -55,8 +57,33 @@ function getListing(req, res) {
     });
 }
 
+function getCreatorListings(req, res) {
+  const userId = req.params.userId;
+  return Listing.getCreatorListings(userId)
+    .then(listings => {
+      res.json(listings);
+    });
+}
+
+function getParticipatedListings(req, res) {
+  const userId = req.params.userId;
+  return User.getUserById(userId)
+    .then(Listing.getParticipatedListings)
+    .then(listings => {
+      const promiseArray = [];
+      listings.forEach(listing => {
+        promiseArray.push(Listing.getListingById(listing.id))
+      });
+      return Promise.all(promiseArray);
+    })
+    .then(listings => {
+      res.json(listings);
+    });
+}
+
 const userCtrl = {
   getListings, addListing, updateListing,
-  registerUser, closeListing, getListing
+  registerUser, closeListing, getListing,
+  getCreatorListings, getParticipatedListings
 };
 export default userCtrl;

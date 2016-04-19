@@ -1,7 +1,6 @@
 const bodyParser = require('body-parser');
 const config = require('config');
 const morgan = require('morgan');
-const passport = require('passport');
 const express = require('express');
 const app = express();
 

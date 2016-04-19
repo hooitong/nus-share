@@ -16,21 +16,18 @@
   "homepage": "https://bitbucket.org/hooitong/cs4215-elm-app#readme",
   "dependencies": {
     "bcrypt": "^0.8.5",
+    "bluebird": "^3.3.5",
     "body-parser": "^1.15.0",
     "config": "^1.20.1",
     "express": "^4.13.4",
     "i": "^0.3.4",
-    "jsonwebtoken": "^5.7.0",
     "lodash": "^4.11.1",
     "moment": "^2.12.0",
     "morgan": "^1.7.0",
     "node-uuid": "^1.4.7",
-    "passport": "^0.3.2",
-    "passport-jwt": "^2.0.0",
     "pg": "^4.5.3",
     "pg-hstore": "^2.3.2",
-    "sequelize": "^3.21.0",
-    "socket.io": "^1.4.5"
+    "sequelize": "^3.21.0"
   },
   "devDependencies": {
     "babel-core": "^6.7.6",

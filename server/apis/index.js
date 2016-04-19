@@ -1,4 +1,3 @@
-import passport from 'passport';
 import listingCtrl from './listing_controller';
 import userCtrl from './user_controller';
 
@@ -15,6 +14,8 @@ module.exports = function (app, express) {
   /* Listings-Related Endpoints */
   listingsRouter.get('/', listingCtrl.getListings);
   listingsRouter.post('/', listingCtrl.addListing);
+  listingsRouter.get('/created/:userId', listingCtrl.getCreatorListings);
+  listingsRouter.get('/participated/:userId', listingCtrl.getParticipatedListings)
   listingsRouter.put('/:listingId', listingCtrl.updateListing);
   listingsRouter.put('/:listingId/:userId', listingCtrl.registerUser);
   listingsRouter.delete('/:listingId', listingCtrl.closeListing);

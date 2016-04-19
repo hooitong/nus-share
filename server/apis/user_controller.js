@@ -40,9 +40,9 @@ function authenticate(req, res) {
 
   User.getUserByEmail(email)
     .then(user => {
-      if (!user) res.json({message: AUTH_ERROR }, 400);
+      if (!user) res.json({ message: AUTH_ERROR }, 400);
       else if (user.validatePassword(password)) res.json(user);
-      else res.json({message: AUTH_ERROR }, 400);
+      else res.json({ message: AUTH_ERROR }, 400);
     });
 }
 

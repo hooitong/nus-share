@@ -1,7 +1,7 @@
 'use strict';
 const _ = require('lodash');
 const uuid = require('node-uuid');
-const User = require('./user');
+
 module.exports = function (sequelize, DataTypes) {
   return sequelize.define('listing', {
     id: {
@@ -15,8 +15,7 @@ module.exports = function (sequelize, DataTypes) {
     startDate: DataTypes.DATE,
     endDate: DataTypes.DATE,
     limit: DataTypes.INTEGER,
-    closed: DataTypes.BOOLEAN,
-    tags: DataTypes.ARRAY(DataTypes.STRING)
+    closed: DataTypes.BOOLEAN
   }, {
     underscored: true,
     classMethods: {
@@ -28,7 +27,10 @@ module.exports = function (sequelize, DataTypes) {
           });
       },
       getListingById(listingId) {
-        return this.find({where: {id: listingId}, include: [{all: true}, this.associations.users]});
+        return this.find({
+          where: { id: listingId },
+          include: [{ all: true }, this.associations.users]
+        });
       },
       updateListing(listingId, updateContent) {
         return this.findById(listingId)
@@ -39,8 +41,20 @@ module.exports = function (sequelize, DataTypes) {
       getListings() {
         return this.findAll();
       },
+      getCreatorListings(userId) {
+        return this.findAll({
+          where: { creator_id: userId },
+          include: [{ all: true }, this.associations.users]
+        });
+      },
+      getParticipatedListings(user) {
+        return user.getListings();
+      },
       getValidListings(currentDate) {
-        return this.findAll({ where: { endDate: { $gt: currentDate }, closed: false }, include: [{all: true}, this.associations.users] })
+        return this.findAll({
+            where: { endDate: { $gt: currentDate }, closed: false },
+            include: [{ all: true }, this.associations.users]
+          })
           .then(pendingListings => {
             return _.filter(pendingListings, listing => {
               return listing.getUsers()
